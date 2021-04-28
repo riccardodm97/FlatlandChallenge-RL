@@ -1,3 +1,8 @@
+import tensorflow as tf
+
+print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+
+
 from flatland.envs.rail_env import RailEnv
 from flatland.envs.rail_generators import rail_from_manual_specifications_generator
 from flatland.utils.rendertools import RenderTool
@@ -18,3 +23,5 @@ env_renderer.render_env(show=True, show_predictions=False, show_observations=Fal
 
 # uncomment to keep the renderer open
 input("Press Enter to continue...")
+
+
