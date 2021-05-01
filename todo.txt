@@ -1,0 +1,5 @@
+1 arg parser (substitute class) to select different configurations
+2 evalutation set of railway configurations to cover the whole spectrum from easy to complex tasks
+3 different DQN / RL lib ? / policy ?? 
+4 better dive in flatland doc 
+5 look multiagent example
