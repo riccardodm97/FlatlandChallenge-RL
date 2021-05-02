@@ -3,3 +3,5 @@
 3 different DQN / RL lib ? / policy ?? 
 4 better dive in flatland doc 
 5 look multiagent example
+6 render 
+7 callbacks and general insight training and scores 
