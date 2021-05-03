@@ -161,10 +161,11 @@ def loop(n_episodes,max_steps,agent,env,isTraining,learn_every):
             for handle in env.get_agent_handles():
                 if info['action_required'][handle]:
                     action = agent.choose_action(normalize_observation(obs[handle],obs_tree_depth,10))
+                    action_count[action] +=1
                 else :
                     action = 0        #TODO modificare
                 actions[handle] = action
-                action_count[action] +=1 
+                 
                 
             
             # Environment step
@@ -279,4 +280,3 @@ def main():
 
         
 main()
-
