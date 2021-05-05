@@ -134,7 +134,9 @@ def createEnv(x_dim,y_dim,depth,seed,n_agents):
     return env 
 
 
-def loop(n_episodes,max_steps,agent,env:RailEnv,isTraining,learn_every):
+def loop(n_episodes,max_steps,agent : Agent ,env: RailEnv ,isTraining,learn_every):
+
+    env.reset(True,True)
 
     obs_tree_depth = env.obs_builder.max_depth
 
@@ -162,8 +164,7 @@ def loop(n_episodes,max_steps,agent,env:RailEnv,isTraining,learn_every):
 
         for handle in env.get_agent_handles():
             if obs[handle]:
-                agent_obs[handle] = normalize_observation(obs[handle],observation_tree_depth,
-                                                         observation_radius=10)
+                agent_obs[handle] = normalize_observation(obs[handle],obs_tree_depth, observation_radius=10)
                 agent_prev_obs[handle] = agent_obs[handle].copy()
 
 
@@ -191,15 +192,14 @@ def loop(n_episodes,max_steps,agent,env:RailEnv,isTraining,learn_every):
                             state = agent_prev_obs[handle],
                             action = agent_prev_action[handle],
                             reward = all_rewards[handle],
-                            next_state = agent_obs[handle]
+                            next_state = agent_obs[handle],
                             done = done[handle])
 
-                        agent_prev_obs[hnadle] = agent_obs[handle].copy()
-                        agent_prev_action[hnadle] = action_dict[handle]
+                        agent_prev_obs[handle] = agent_obs[handle].copy()
+                        agent_prev_action[handle] = action_dict[handle]
 
                     if next_obs[handle]:
-                        agent_obs[handle] = normalize_observation(next_obs[handle],observation_tree_depth,
-                                                                  observation_radius=10)      
+                        agent_obs[handle] = normalize_observation(next_obs[handle],obs_tree_depth,observation_radius=10)      
 
                     score += all_rewards[handle]
 
@@ -260,7 +260,7 @@ class Parameters():
 
     # Loop parameneters
     is_training = True
-    n_episodes = 50      #500
+    n_episodes = 10      #500
     max_steps = int(4 * 2 * (x_dim + y_dim + (n_agents / 5)))              #num cities
     learn_every = 1       #10
 
