@@ -13,7 +13,6 @@ from flatland.envs.observations import TreeObsForRailEnv
 from utils.observation_utils import normalize_observation
 
 
-
 class Memory:
 
     def __init__(self,mem_size, input_shape):
