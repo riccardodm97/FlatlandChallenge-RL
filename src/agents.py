@@ -10,6 +10,7 @@ class Agent(ABC):
        
         self.obs_size = obs_size
         self.action_size = action_size
+        self.checkpoint = checkpoint_path
 
         self.agent_par = agent_par
         self.train_par = train_par
@@ -32,11 +33,11 @@ class Agent(ABC):
     def __str__(self):
         pass
 
-    def load_model(self,path):
-        return tf.keras.models.load_model(path)
+    def load_model(self):
+        return tf.keras.models.load_model(self.checkpoint)
 
-    def save_model(self,path):
-        self.qnetwork.save(path)
+    def save_model(self):
+        self.qnetwork.save(self.checkpoint)
 
 
 class DQNAgent(Agent):
@@ -55,7 +56,7 @@ class DQNAgent(Agent):
         self.mem_size = self.train_par['mem_size']
         self.lr = self.train_par['learning_rate']
 
-        self.checkpoint = checkpoint_path
+       
         
         self.memory = ReplayBuffer_np(self.mem_size,self.obs_size)
         self.init_qnetwork()

@@ -16,14 +16,13 @@ import src.agents as agent_classes
 
 
 class ExcHandler:
-    def __init__(self, params, training=True, rendering=False, checkpoint=None):
+    def __init__(self, params, training=True, checkpoint=None):
         self._env_params = params['env'] # Environment
         self._trn_params = params['trn'] # Training
         self._obs_params = params['obs'] # Observation
         self._agn_params = params['agn'] # Agent
 
         self._training = training
-        self._rendering = rendering
 
         # Instantiate observation and environment 
         obs_wrap_class = getattr(obs_wrap_classes, self._obs_params['class'])
@@ -38,16 +37,13 @@ class ExcHandler:
         agent_class = getattr(agent_classes, self._agn_params['class'])
         self.agent = agent_class(self._obs_size, self._action_size, self._agn_params, self._trn_params, checkpoint)
         
-        # Max number of steps per episode
+        # Max number of steps per episode as defined by flatland 
         self._max_steps = int(4 * 2 * (self._env_params['x_dim'] + self._env_params['y_dim'] + (
                 self._env_params['n_agents'] / self._env_params['n_cities'])))
 
 
     def initEnv(self, obs_builder):
         
-        # observation builder
-        observation = obs_builder
-
         #setup the environment
         env = RailEnv(
             width=self._env_params['x_dim'],
@@ -61,7 +57,7 @@ class ExcHandler:
             ),
             schedule_generator=sparse_schedule_generator(),
             number_of_agents=self._env_params['n_agents'],
-            obs_builder_object=observation
+            obs_builder_object=obs_builder
         )
 
         return env 
