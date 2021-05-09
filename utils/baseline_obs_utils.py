@@ -112,14 +112,3 @@ def split_tree_into_feature_groups(tree, max_tree_depth: int) -> Tuple[np.ndarra
     return data, distance, agent_data
 
 
-def normalize_observation(observation, tree_depth: int, observation_radius=0):
-    """
-    This function normalizes the observation used by the RL algorithm
-    """
-    data, distance, agent_data = split_tree_into_feature_groups(observation, tree_depth)
-
-    data = norm_obs_clip(data, fixed_radius=observation_radius)
-    distance = norm_obs_clip(distance, normalize_to_range=True)
-    agent_data = np.clip(agent_data, -1, 1)
-    normalized_obs = np.concatenate((np.concatenate((data, distance)), agent_data))
-    return normalized_obs
