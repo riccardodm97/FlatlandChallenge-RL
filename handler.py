@@ -206,3 +206,5 @@ class ExcHandler:
                 if done['__all__']:
                     break
         
+        env_renderer.close_window()
+        
