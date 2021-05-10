@@ -35,7 +35,7 @@ class ExcHandler:
 
         # Instantiate agent 
         agent_class = getattr(agent_classes, self._agn_params['class'])
-        self.agent = agent_class(self._obs_size, self._action_size, self._agn_params, self._trn_params, checkpoint)
+        self.agent = agent_class(self._obs_size, self._action_size, self._agn_params, self._trn_params, checkpoint , not self._training)
         
         # Max number of steps per episode as defined by flatland 
         self._max_steps = int(4 * 2 * (self._env_params['x_dim'] + self._env_params['y_dim'] + (
@@ -70,7 +70,7 @@ class ExcHandler:
         if self._training :
             self.run_episodes(n_episodes)
         else:
-            pass #TODO : implementare ciclo di sola visualizzazione (usare render)
+            self.eval_policy(n_episodes)
         
     
     def run_episodes(self,n_episodes):
@@ -161,6 +161,8 @@ class ExcHandler:
                     100 * np.mean(completion_window),
                     action_probs
                 ))
+        
+        self.agent.save_model('checkpoints/' + str(self.agent))
 
         # Plot overall training progress at the end
         plt.plot(scores)
@@ -168,3 +170,39 @@ class ExcHandler:
 
         plt.plot(completion)
         plt.show()
+
+    def eval_policy(self,n_episodes):
+
+        self.env.reset(True,True)
+
+        env_renderer = RenderTool(self.env)
+
+        action_dict = dict()
+
+        for _ in range(n_episodes):
+            agent_obs = [None] * self.env.get_num_agents()
+
+            # Reset environment
+            obs, info = self.env.reset(regenerate_rail=True, regenerate_schedule=True)
+
+            env_renderer.reset()
+
+            for _ in range(self._max_steps-1):
+                for handle in self.env.get_agent_handles():
+                    agent_obs[handle] = self.obs_wrapper.normalize(obs[handle])
+
+                    action = 0    
+                    if info['action_required'][handle]:
+                        action = self.agent.act(agent_obs[handle])
+
+                    action_dict.update({handle: action})
+                    
+                # Environment step
+                obs, all_rewards, done, info = self.env.step(action_dict)
+
+                env_renderer.render_env(show=True, show_observations=True, show_predictions=False)
+
+
+                if done['__all__']:
+                    break
+        

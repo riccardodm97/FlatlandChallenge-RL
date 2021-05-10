@@ -6,16 +6,22 @@ from abc import ABC, abstractmethod
 
 class Agent(ABC):
 
-    def __init__(self, obs_size, action_size, agent_par, train_par, checkpoint_path):
+    def __init__(self, obs_size, action_size, agent_par, train_par, checkpoint_path, eval_mode = False):
        
         self.obs_size = obs_size
         self.action_size = action_size
         self.checkpoint = checkpoint_path
+        self.eval_mode = eval_mode
 
         self.agent_par = agent_par
         self.train_par = train_par
 
         self.t_step = 0
+
+        self.load_params()
+    
+    @abstractmethod
+    def load_params(self): pass
 
     @abstractmethod
     def act(self, obs) -> int: pass
@@ -24,38 +30,35 @@ class Agent(ABC):
     def step(self, obs, action, reward, next_obs, done): pass
 
     @abstractmethod
-    def learn(self): pass
-
-    @abstractmethod
     def on_episode_end(self): pass
         
     @abstractmethod
-    def __str__(self): pass
-        
-    def load_model(self):
-        return tf.keras.models.load_model(self.checkpoint)
+    def __str__(self) -> str: pass
+    
+    @abstractmethod
+    def load_model(self,filepath): pass 
 
-    def save_model(self):
-        self.qnetwork.save()  #TODO implement 
+    @abstractmethod
+    def save_model(self,filepath): pass
 
 
 class DQNAgent(Agent):
 
-    def __init__(self, obs_size, action_size, agent_par, train_par, checkpoint_path):
+    def load_params(self):
 
-        super().__init__(obs_size,action_size,agent_par,train_par,checkpoint_path)
-
-        self.eps = self.agent_par['eps_start'] 
-        self.eps_decay = self.agent_par['eps_decay']
+        self.eps = self.agent_par['eps_start'] if self.eval_mode == False else 0.05
+        self.eps_decay = self.agent_par['eps_decay'] 
         self.eps_min = self.agent_par['eps_min']
         
-        self.gamma = self.train_par['gamma']
-        self.update_every = self.train_par['learn_every']
-        self.sample_size = self.train_par['sample_size']
-        self.mem_size = self.train_par['mem_size']
-        self.lr = self.train_par['learning_rate']
-        
-        self.memory = ReplayBuffer_np(self.mem_size,self.obs_size)
+        if not self.eval_mode :
+            self.gamma = self.train_par['gamma']
+            self.update_every = self.train_par['learn_every']
+            self.sample_size = self.train_par['sample_size']
+            self.mem_size = self.train_par['mem_size']
+            self.lr = self.train_par['learning_rate']
+
+            self.memory = ReplayBuffer_np(self.mem_size,self.obs_size)
+
         self.init_qnetwork()
 
     def init_qnetwork(self):
@@ -80,14 +83,14 @@ class DQNAgent(Agent):
 
     def act(self, obs) -> int : 
         state = tf.expand_dims(obs, axis=0)
-        if np.random.random() <= self.eps: 
+
+        if np.random.random() < self.eps: 
             return np.random.choice(self.action_size)
         else:
             return np.argmax(self.qnetwork.predict(state))
     
 
-    def step(self, obs, action, reward, next_obs, done):
-        
+    def step(self, obs, action, reward, next_obs, done):  
         self.t_step +=1
 
         #store one step experience in replay buffer
@@ -109,6 +112,14 @@ class DQNAgent(Agent):
         q_target[batch_indexes,action_sample] = reward_sample + (self.gamma * np.max(q_next,axis=1) * (1 - done_sample))
 
         self.qnetwork.fit(state_sample,q_target,batch_size = 32,verbose = 0)    
+
+    def load_model(self,filepath):
+        print('loading model from',filepath)
+        return tf.keras.models.load_model(filepath)
+
+    def save_model(self,filepath):
+        print('saving model to', filepath)
+        self.qnetwork.save(filepath)  
     
     def __str__(self):
         return 'DQNAgent'
