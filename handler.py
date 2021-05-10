@@ -18,15 +18,15 @@ import src.agents as agent_classes
 class ExcHandler:
     def __init__(self, params, training=True, checkpoint=None):
         self._env_params = params['env'] # Environment
-        self._trn_params = params['trn'] # Training
         self._obs_params = params['obs'] # Observation
         self._agn_params = params['agn'] # Agent
+        self._trn_params = params['trn'] # Training
 
         self._training = training
 
         # Instantiate observation and environment 
         obs_wrap_class = getattr(obs_wrap_classes, self._obs_params['class'])
-        self.obs_wrapper = obs_wrap_class(self._obs_params)
+        self.obs_wrapper = obs_wrap_class(self._obs_params) 
         self.env = self.initEnv(self.obs_wrapper.builder)
 
         # The action space of flatland is 5 discrete actions
@@ -82,18 +82,17 @@ class ExcHandler:
         completion_window = deque(maxlen=100)
         scores = []
         completion = []
-        action_count = [0] * self.action_size
+        action_count = [0] * self._action_size
 
         agent_obs = [None] * self.env.get_num_agents()
         agent_prev_obs = [None] * self.env.get_num_agents()
-        agent_prev_action = [2] * self.env.get_num_agents()
+        agent_prev_action = [2] * self.env.get_num_agents()       #TODO perche 
         update_values = [False] * self.env.get_num_agents()
         action_dict = dict()
         
         for n in range(n_episodes):
 
             # Initialize episode
-            n_steps = 0
             score = 0
 
             # Reset environment
@@ -101,7 +100,7 @@ class ExcHandler:
 
             for handle in self.env.get_agent_handles():
                 if obs[handle]:
-                    agent_obs[handle] = self.obs_wrapper.normalize_observation(obs[handle])
+                    agent_obs[handle] = self.obs_wrapper.normalize(obs[handle])
                     agent_prev_obs[handle] = agent_obs[handle].copy()
 
 
@@ -125,22 +124,25 @@ class ExcHandler:
                     if update_values or done['__all__']:
                         # Add state to memory
                         self.agent.step(
-                            state = agent_prev_obs[handle],
+                            obs = agent_prev_obs[handle],
                             action = agent_prev_action[handle],
                             reward = all_rewards[handle],
-                            next_state = agent_obs[handle],
-                            done = done[handle])
-
+                            next_obs = agent_obs[handle],
+                            done = done[handle]
+                        )
+                        
                         agent_prev_obs[handle] = agent_obs[handle].copy()
                         agent_prev_action[handle] = action_dict[handle]
 
                     if next_obs[handle]:
-                        agent_obs[handle] = self.obs_wrapper.normalize_observation(next_obs[handle])
+                        agent_obs[handle] = self.obs_wrapper.normalize(next_obs[handle])
 
                     score += all_rewards[handle]
 
                 if done['__all__']:
                     break
+            
+            self.agent.on_episode_end()
 
             # Collection information about training
             tasks_finished = np.sum([int(done[idx]) for idx in self.env.get_agent_handles()])
@@ -151,10 +153,11 @@ class ExcHandler:
             action_probs = action_count / np.sum(action_count)
 
             print(
-                '\rTraining {} agents \t Episode {}\t Average Score: {:.3f}\tDones: {:.2f}%\t Action Probabilities: \t {}'.format(
+                '\rTraining {} agents \t Episode {}\t Average Score: {:.3f}\t Eps:{:.4f}\t Dones: {:.2f}%\t Action Probabilities: \t {}'.format(
                     self.env.get_num_agents(),
                     n,
                     np.mean(scores_window),
+                    self.agent.eps,
                     100 * np.mean(completion_window),
                     action_probs
                 ))

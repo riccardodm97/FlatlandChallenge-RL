@@ -1,12 +1,12 @@
 from tensorflow.python.training.tracking.util import Checkpoint
-from replay_buffers import ReplayBuffer_np
+from src.replay_buffers import ReplayBuffer_np
 import numpy as np
 import tensorflow as tf
 from abc import ABC, abstractmethod
 
 class Agent(ABC):
 
-    def __init__(self,obs_size,action_size, agent_par, train_par, checkpoint_path):
+    def __init__(self, obs_size, action_size, agent_par, train_par, checkpoint_path):
        
         self.obs_size = obs_size
         self.action_size = action_size
@@ -18,26 +18,25 @@ class Agent(ABC):
         self.t_step = 0
 
     @abstractmethod
-    def act(self):
-        pass
+    def act(self, obs) -> int: pass
+        
+    @abstractmethod
+    def step(self, obs, action, reward, next_obs, done): pass
 
     @abstractmethod
-    def step(self):
-        pass
+    def learn(self): pass
 
     @abstractmethod
-    def learn(self):
-        pass
-
+    def on_episode_end(self): pass
+        
     @abstractmethod
-    def __str__(self):
-        pass
-
+    def __str__(self): pass
+        
     def load_model(self):
         return tf.keras.models.load_model(self.checkpoint)
 
     def save_model(self):
-        self.qnetwork.save(self.checkpoint)
+        self.qnetwork.save()  #TODO implement 
 
 
 class DQNAgent(Agent):
@@ -51,12 +50,10 @@ class DQNAgent(Agent):
         self.eps_min = self.agent_par['eps_min']
         
         self.gamma = self.train_par['gamma']
-        self.update_every = self.train_par['update_every']
+        self.update_every = self.train_par['learn_every']
         self.sample_size = self.train_par['sample_size']
         self.mem_size = self.train_par['mem_size']
         self.lr = self.train_par['learning_rate']
-
-       
         
         self.memory = ReplayBuffer_np(self.mem_size,self.obs_size)
         self.init_qnetwork()
@@ -78,15 +75,16 @@ class DQNAgent(Agent):
 
         self.qnetwork = model
 
-    def act(self, obs): 
+    def on_episode_end(self):
+        self.eps = max(self.eps_min, self.eps_decay*self.eps)      #TODO evitare che debbano averlo tutti gli agent
+
+    def act(self, obs) -> int : 
         state = tf.expand_dims(obs, axis=0)
         if np.random.random() <= self.eps: 
             return np.random.choice(self.action_size)
         else:
             return np.argmax(self.qnetwork.predict(state))
     
-    def on_episode_end(self):
-        self.eps = max(self.eps_min, self.eps_decay*self.eps)      #TODO evitare che debbano averlo tutti gli agent
 
     def step(self, obs, action, reward, next_obs, done):
         

@@ -8,22 +8,17 @@ from utils.baseline_obs_utils import split_tree_into_feature_groups, norm_obs_cl
 class Observation(ABC):
     def __init__(self, parameters):
         self.parameters = parameters
-        self.create()
+        
+    @abstractmethod
+    def get_obs_dim(self): pass
 
     @abstractmethod
-    def create(self):
-        pass
-
-    @abstractmethod
-    def get_obs_dim(self):
-        pass
-
-    @abstractmethod
-    def normalize(self, observation):
-        pass
+    def normalize(self, observation): pass
 
 class TreeObs(Observation):
-    def create(self):
+
+    def __init__(self, parameters):
+        super().__init__(parameters)
         self.builder = TreeObsForRailEnv(max_depth=self.parameters['tree_depth'])
 
     def get_obs_dim(self):
