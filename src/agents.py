@@ -42,7 +42,7 @@ class Agent(ABC):
     def __str__(self) -> str: pass
 
 
-class RandomAgent(Agent):
+class RndAgent(Agent):
 
     def load_params(self): pass 
 
