@@ -1,14 +1,17 @@
 import json
-from src.exec import ExcHandler
 from argparse import ArgumentParser
+
+from src.exec import ExcHandler
+import logs.stats_handler as stats
 
 
 def main(episodes : int, parameters_filename, training : bool, checkpoint_file): 
     with open(parameters_filename) as json_file:
         parameters = json.load(json_file)
 
-    #TODO : init stats
-
+    #log initial parameters
+    stats.init(episodes,parameters,training,checkpoint_file)  
+        
     ex = ExcHandler(parameters, training , checkpoint_file)
     ex.start(episodes)
 

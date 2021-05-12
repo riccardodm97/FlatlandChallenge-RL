@@ -1,7 +1,10 @@
 from typing import Dict, List, Deque
 from collections import deque
 
-#single run parameters 
+
+id : str = None
+
+#all given parameters 
 env_params : Dict = {}
 obs_params : Dict = {}
 agn_parmas : Dict = {}
@@ -11,6 +14,10 @@ from_checkpoint : bool = False
 num_episodes : int = None
 
 #train stats
+max_steps : int = 0
+action_size : int = 0
+obs_size : int = 0
+
 scores_window : Deque[float] = deque(maxlen=100)  
 completion_window : Deque[float] = deque(maxlen=100)
 scores : List = []

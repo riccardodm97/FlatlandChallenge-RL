@@ -1,9 +1,10 @@
 import random
+from datetime import datetime
+from utils.timer import Timer
+
+
 import matplotlib.pyplot as plt
 import numpy as np
-
-from collections import deque
-from pathlib import Path
 
 from flatland.envs.rail_env import RailEnv
 from flatland.envs.rail_generators import sparse_rail_generator
@@ -15,7 +16,7 @@ import src.agents as agent_classes
 from src.obs_wrappers import Observation
 from src.agents import Agent
 
-
+import logs.stats_handler as stats
 
 class ExcHandler:
     def __init__(self, params, training=True, checkpoint=None):
@@ -41,6 +42,11 @@ class ExcHandler:
         
         # Max number of steps per episode as defined by flatland 
         self._max_steps = int(4 * 2 * (self._env_params['x_dim'] + self._env_params['y_dim'] + (self._env_params['n_agents'] / self._env_params['n_cities'])))
+
+        #LOG
+        stats.max_steps = self._max_steps
+        stats.action_size = self._action_size
+        stats.obs_size = self._obs_size
 
 
     def initEnv(self, obs_builder):
@@ -69,29 +75,33 @@ class ExcHandler:
         np.random.seed(self._env_params['seed'])
 
         if self._training :
-            self.run_episodes(n_episodes)
+            self.train_agent(n_episodes)
         else:
-            self.eval_policy(n_episodes)
+            self.eval_agent(n_episodes)
         
     
-    def run_episodes(self,n_episodes):
+    def train_agent(self,n_episodes):
+
+        # Unique ID for this run
+        now = datetime.now()
+        id = now.strftime('%d/%m/%H:%M:%S')
+
+        #LOG
+        stats.id = id
 
         self.env.reset(True,True)
 
-
-        scores_window = deque(maxlen=100)  
-        completion_window = deque(maxlen=100)
-        scores = []
-        completion = []
-        action_count = [0] * self._action_size
-
         agent_obs = [None] * self.env.get_num_agents()
         agent_prev_obs = [None] * self.env.get_num_agents()
-        agent_prev_action = [2] * self.env.get_num_agents()       #TODO perche 
+        agent_prev_action = [2] * self.env.get_num_agents()       #TODO perché??
         update_values = [False] * self.env.get_num_agents()
         action_dict = dict()
         
-        for n in range(n_episodes):
+        #LOG
+        training_timer = Timer()                                  
+        training_timer.start()
+        
+        for ep_id in range(n_episodes):
 
             # Initialize episode
             score = 0
@@ -163,7 +173,7 @@ class ExcHandler:
                     action_probs
                 ))
         
-        self.agent.save('checkpoints/' + str(self.agent))
+        self.agent.save('checkpoints/' + id)
 
         # Plot overall training progress at the end
         plt.plot(scores)
@@ -172,7 +182,7 @@ class ExcHandler:
         plt.plot(completion)
         plt.show()
 
-    def eval_policy(self,n_episodes):
+    def eval_agent(self,n_episodes):
 
         self.env.reset(True,True)
 
