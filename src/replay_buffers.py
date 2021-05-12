@@ -1,14 +1,14 @@
-import numpy as np 
 from abc import ABC, abstractmethod
-from collections import namedtuple, deque, Iterable
+from collections import namedtuple, deque
+from collections.abc import Iterable
 import random
-import tensorflow as tf 
-
+import numpy as np 
 
 class ReplayBuffer(ABC):
 
-    def __init__(self,mem_size):
+    def __init__(self,mem_size, obs_size = None):
         self.mem_size = mem_size
+        self.obs_size = obs_size
         self.stored = 0
 
     @abstractmethod
@@ -29,13 +29,15 @@ class ReplayBuffer(ABC):
 
 class ReplayBuffer_np(ReplayBuffer):
 
-    def __init__(self, mem_size, input_shape):
-        self.state_memory = np.zeros((mem_size,input_shape))
+    def __init__(self, mem_size, obs_size):
+        super().__init__(mem_size,obs_size)
+
+        self.state_memory = np.zeros((mem_size,obs_size))
         self.action_memory = np.zeros((mem_size),dtype=np.int8)
         self.reward_memory = np.zeros((mem_size))
-        self.new_state_memory = np.zeros((mem_size,input_shape))
+        self.new_state_memory = np.zeros((mem_size,obs_size))
         self.done_memory = np.zeros((mem_size),dtype=np.int8)
-        super().__init__(mem_size)
+        
     
     def store_experience(self, state, action, reward, new_state, done):
         index = self.stored % self.mem_size
@@ -64,12 +66,12 @@ Experience = namedtuple("Experience", field_names=["state", "action", "reward", 
 
 class ReplayBuffer_dq(ReplayBuffer):
 
-    def __init__(self, mem_size):
+    def __init__(self, mem_size, obs_size):
         self.memory = deque(maxlen=mem_size)
         super().__init__(mem_size)
         
     def store_experience(self, state, action, reward, new_state, done):
-        e = Experience(np.expand_dims(state, 0), action, reward, np.expand_dims(new_state, 0), int(done))
+        e = Experience(np.array(state), action, reward, np.array(new_state), int(done))
         self.memory.append(e)
         self.stored += 1
 
@@ -84,8 +86,9 @@ class ReplayBuffer_dq(ReplayBuffer):
         return state_sample, action_sample, reward_sample, new_state_sample, done_sample
 
     def __v_stack_impr(self, states):
-        sub_dim = len(states[0][0]) if isinstance(states[0], Iterable) else 1
-        np_states = np.reshape(np.array(states), (len(states), sub_dim))
+        np_states = np.array(states)
+        if isinstance(states[0], Iterable):
+            np_states = np.reshape(np_states, (len(states), len(states[0])))
         return np_states
 
     def __str__(self):

@@ -104,7 +104,7 @@ class ExcHandler:
                     agent_prev_obs[handle] = agent_obs[handle].copy()
 
 
-            for step in range(self._max_steps-1):
+            for _ in range(self._max_steps-1):
                 for handle in self.env.get_agent_handles():
                     if info['action_required'][handle]:
                         update_values[handle] = True
@@ -162,7 +162,7 @@ class ExcHandler:
                     action_probs
                 ))
         
-        self.agent.save_model('checkpoints/' + str(self.agent))
+        self.agent.save('checkpoints/' + str(self.agent))
 
         # Plot overall training progress at the end
         plt.plot(scores)

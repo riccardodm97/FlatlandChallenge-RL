@@ -1,8 +1,8 @@
-from tensorflow.python.training.tracking.util import Checkpoint
-from src.replay_buffers import ReplayBuffer_np
-import numpy as np
-import tensorflow as tf
 from abc import ABC, abstractmethod
+import tensorflow as tf
+import numpy as np
+
+from src.replay_buffers import ReplayBuffer_dq, ReplayBuffer_np
 
 class Agent(ABC):
 
@@ -31,22 +31,41 @@ class Agent(ABC):
 
     @abstractmethod
     def on_episode_end(self): pass
-        
-    @abstractmethod
-    def __str__(self) -> str: pass
     
     @abstractmethod
-    def load_model(self,filepath): pass 
+    def load(self,filepath): pass 
 
     @abstractmethod
-    def save_model(self,filepath): pass
+    def save(self,filepath): pass
+
+    @abstractmethod
+    def __str__(self) -> str: pass
+
+
+class RandomAgent(Agent):
+
+    def load_params(self): pass 
+
+    def act(self, obs):
+        return np.random.choice(np.arange(self.action_size))
+
+    def step(self, obs, action, reward, next_obs, done): pass
+
+    def on_episode_end(self): pass
+
+    def load(self, filepath): pass
+
+    def save(self, filepath): pass
+
+    def __str__(self):
+        return "RandomAgent"
 
 
 class DQNAgent(Agent):
 
     def load_params(self):
 
-        self.eps = self.agent_par['eps_start'] if self.eval_mode == False else 0.05
+        self.eps = self.agent_par['eps_start'] if self.eval_mode is False else 0.05
         self.eps_decay = self.agent_par['eps_decay'] 
         self.eps_min = self.agent_par['eps_min']
         
@@ -57,7 +76,7 @@ class DQNAgent(Agent):
             self.mem_size = self.train_par['mem_size']
             self.lr = self.train_par['learning_rate']
 
-            self.memory = ReplayBuffer_np(self.mem_size,self.obs_size)
+            self.memory = ReplayBuffer_np(self.mem_size, self.obs_size)                     
 
         self.init_qnetwork()
 
@@ -65,7 +84,7 @@ class DQNAgent(Agent):
 
         model = None
         if self.checkpoint is not None :
-            model = self.load_model(self.checkpoint)
+            model = self.load(self.checkpoint)
         else:
             model = tf.keras.models.Sequential([
                     tf.keras.layers.Dense(128, input_shape=(self.obs_size,)),
@@ -97,7 +116,7 @@ class DQNAgent(Agent):
         self.memory.store_experience(obs,action,reward,next_obs,done)
 
         # Learn every UPDATE_EVERY time steps if enough samples are available in memory
-        if self.t_step  % self.update_every == 0 and self.memory.stored >= self.sample_size:
+        if self.t_step  % self.update_every == 0 and len(self.memory) >= self.sample_size:
             self.learn()
 
 
@@ -113,11 +132,11 @@ class DQNAgent(Agent):
 
         self.qnetwork.fit(state_sample,q_target,batch_size = 32,verbose = 0)    
 
-    def load_model(self,filepath):
+    def load(self,filepath):
         print('loading model from',filepath)
         return tf.keras.models.load_model(filepath)
 
-    def save_model(self,filepath):
+    def save(self,filepath):
         print('saving model to', filepath)
         self.qnetwork.save(filepath)  
     

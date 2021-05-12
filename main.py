@@ -1,10 +1,9 @@
 import json
-from handler import ExcHandler
+from src.exec import ExcHandler
 from argparse import ArgumentParser
 
 
-
-def main(episodes, parameters_filename, training : bool, checkpoint_file): 
+def main(episodes : int, parameters_filename, training : bool, checkpoint_file): 
     with open(parameters_filename) as json_file:
         parameters = json.load(json_file)
 
