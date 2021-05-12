@@ -7,9 +7,6 @@ def main(episodes : int, parameters_filename, training : bool, checkpoint_file):
     with open(parameters_filename) as json_file:
         parameters = json.load(json_file)
 
-    if training == False and checkpoint_file is None:
-        raise ValueError('if eval mode provide checkpoint file to load model')
-        
     ex = ExcHandler(parameters, training , checkpoint_file)
     ex.start(episodes)
 
