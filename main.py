@@ -7,8 +7,12 @@ def main(episodes : int, parameters_filename, training : bool, checkpoint_file):
     with open(parameters_filename) as json_file:
         parameters = json.load(json_file)
 
+    #TODO : init stats
+
     ex = ExcHandler(parameters, training , checkpoint_file)
     ex.start(episodes)
+
+    #TODO : save stats
 
 
 

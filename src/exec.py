@@ -40,8 +40,7 @@ class ExcHandler:
         self.agent : Agent = agent_class(self._obs_size, self._action_size, self._agn_params, self._trn_params, checkpoint , not self._training)
         
         # Max number of steps per episode as defined by flatland 
-        self._max_steps = int(4 * 2 * (self._env_params['x_dim'] + self._env_params['y_dim'] + (
-                self._env_params['n_agents'] / self._env_params['n_cities'])))
+        self._max_steps = int(4 * 2 * (self._env_params['x_dim'] + self._env_params['y_dim'] + (self._env_params['n_agents'] / self._env_params['n_cities'])))
 
 
     def initEnv(self, obs_builder):
@@ -114,7 +113,7 @@ class ExcHandler:
                         action_count[action] +=1
                     else :
                         update_values[handle] = False
-                        action = 0        #TODO modificare
+                        action = 0        
                     action_dict.update({handle: action})
                     
                 # Environment step
@@ -191,7 +190,8 @@ class ExcHandler:
 
             for _ in range(self._max_steps-1):
                 for handle in self.env.get_agent_handles():
-                    agent_obs[handle] = self.obs_wrapper.normalize(obs[handle])
+                    if obs[handle] :
+                        agent_obs[handle] = self.obs_wrapper.normalize(obs[handle])
 
                     action = 0    
                     if info['action_required'][handle]:
