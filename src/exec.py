@@ -12,6 +12,8 @@ from flatland.utils.rendertools import RenderTool
 
 import src.obs_wrappers as obs_wrap_classes
 import src.agents as agent_classes
+from src.obs_wrappers import Observation
+from src.agents import Agent
 
 
 
@@ -26,7 +28,7 @@ class ExcHandler:
 
         # Instantiate observation and environment 
         obs_wrap_class = getattr(obs_wrap_classes, self._obs_params['class'])
-        self.obs_wrapper = obs_wrap_class(self._obs_params) 
+        self.obs_wrapper : Observation  = obs_wrap_class(self._obs_params) 
         self.env = self.initEnv(self.obs_wrapper.builder)
 
         # The action space of flatland is 5 discrete actions
@@ -35,7 +37,7 @@ class ExcHandler:
 
         # Instantiate agent 
         agent_class = getattr(agent_classes, self._agn_params['class'])
-        self.agent = agent_class(self._obs_size, self._action_size, self._agn_params, self._trn_params, checkpoint , not self._training)
+        self.agent : Agent = agent_class(self._obs_size, self._action_size, self._agn_params, self._trn_params, checkpoint , not self._training)
         
         # Max number of steps per episode as defined by flatland 
         self._max_steps = int(4 * 2 * (self._env_params['x_dim'] + self._env_params['y_dim'] + (

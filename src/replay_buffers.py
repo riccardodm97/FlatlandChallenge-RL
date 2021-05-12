@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Deque
 from collections import namedtuple, deque
 from collections.abc import Iterable
 import random
@@ -76,7 +77,7 @@ class ReplayBuffer_dq(ReplayBuffer):
         self.stored += 1
 
     def sample_memory(self,sample_size):
-        experiences = random.sample(self.memory, k=sample_size)
+        experiences : Deque[Experience] = random.sample(self.memory, k=sample_size)
         state_sample = self.__v_stack_impr([e.state for e in experiences if e is not None])
         action_sample = self.__v_stack_impr([e.action for e in experiences if e is not None])
         reward_sample = self.__v_stack_impr([e.reward for e in experiences if e is not None])
