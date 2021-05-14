@@ -3,6 +3,7 @@ import tensorflow as tf
 import numpy as np
 
 from src.replay_buffers import ReplayBuffer_dq, ReplayBuffer_np
+import src.handlers.stats_handler as stats
 
 class Agent(ABC):
 
@@ -99,6 +100,7 @@ class DQNAgent(Agent):
 
     def on_episode_end(self):
         self.eps = max(self.eps_min, self.eps_decay*self.eps)      #TODO evitare che debbano averlo tutti gli agent
+        stats.episode_stats.setdefault('eps',[]).append(self.eps)
 
     def act(self, obs) -> int : 
         state = tf.expand_dims(obs, axis=0)
