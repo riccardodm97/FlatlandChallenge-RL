@@ -5,6 +5,11 @@ import wandb
 
 episode_stats : Dict = dict()
 
+
+score_window : Deque = deque(maxlen=100)
+completion_window : Deque = deque(maxlen=100)
+min_steps_window : Deque = deque(maxlen=100)
+
 action_count : List 
 ep_score : float 
 min_steps_to_complete : int 

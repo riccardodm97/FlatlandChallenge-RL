@@ -90,10 +90,6 @@ class ExcHandler:
         update_values = [False] * self.env.get_num_agents()
         action_dict = dict()
         
-        #LOG
-        # training_timer = Timer()                                  
-        # training_timer.start()
-        
         for ep_id in range(n_episodes):
             
             #LOG
@@ -152,19 +148,21 @@ class ExcHandler:
                     break
             
             self.agent.on_episode_end()
+            
+            stats.completion_window.append(np.sum([int(done[idx]) for idx in self.env.get_agent_handles()]) / max(1, self.env.get_num_agents()))
+            stats.score_window.append(stats.ep_score / (self._max_steps * self.env.get_num_agents()))
+            stats.min_steps_window.append(stats.min_steps_to_complete)
 
-            # Collection information about training after each episode
-            stats.episode_stats['completion_perc'] = np.sum([int(done[idx]) for idx in self.env.get_agent_handles()]) / max(1, self.env.get_num_agents())
-            stats.episode_stats['norm_score'] = stats.ep_score / (self._max_steps * self.env.get_num_agents())
-            #stats.episode_stats['action_probs'] = np.histogram(np.divide(stats.action_count,np.sum(stats.action_count))) 
-            stats.episode_stats['min_step_to_complete'] = stats.min_steps_to_complete
+            stats.episode_stats['average_score'] = np.mean(stats.score_window)
+            stats.episode_stats['dones'] = np.mean(stats.completion_window)
+            stats.episode_stats['min_step_to_complete'] = np.mean(stats.min_steps_window)
 
             print(
                 '\rTraining {} agents \t Episode {}\t Average Score: {:.3f}\t Dones: {:.2f}%'.format(
                     self.env.get_num_agents(),
                     ep_id,
-                    stats.episode_stats['norm_score'],
-                    stats.episode_stats['completion_perc']*100
+                    stats.episode_stats['average_score'],
+                    stats.episode_stats['dones']*100
                 ))
             stats.on_episode_end(ep_id)
         
