@@ -7,7 +7,7 @@ episode_stats : Dict = dict()
 
 action_count : List 
 ep_score : float 
-min_steps_to_complete : int = 0
+min_steps_to_complete : int 
 
 
 def on_episode_end(ep_id):
