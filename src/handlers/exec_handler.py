@@ -1,7 +1,7 @@
 import random
-from datetime import datetime
-from utils.timer import Timer
 
+import wandb
+from utils.timer import Timer
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,7 +16,7 @@ import src.agents as agent_classes
 from src.obs_wrappers import Observation
 from src.agents import Agent
 
-import logs.stats_handler as stats
+import src.handlers.stats_handler as stats
 
 class ExcHandler:
     def __init__(self, params, training=True, checkpoint=None):
@@ -44,9 +44,9 @@ class ExcHandler:
         self._max_steps = int(4 * 2 * (self._env_params['x_dim'] + self._env_params['y_dim'] + (self._env_params['n_agents'] / self._env_params['n_cities'])))
 
         #LOG
-        stats.max_steps = self._max_steps
-        stats.action_size = self._action_size
-        stats.obs_size = self._obs_size
+        wandb.config.max_steps = self._max_steps
+        wandb.config.action_size = self._action_size
+        wandb.config.obs_size = self._obs_size
 
 
     def initEnv(self, obs_builder):
@@ -82,13 +82,6 @@ class ExcHandler:
     
     def train_agent(self,n_episodes):
 
-        # Unique ID for this run
-        now = datetime.now()
-        id = now.strftime('%d/%m/%H:%M:%S')
-
-        #LOG
-        stats.id = id
-
         self.env.reset(True,True)
 
         agent_obs = [None] * self.env.get_num_agents()
@@ -102,9 +95,11 @@ class ExcHandler:
         training_timer.start()
         
         for ep_id in range(n_episodes):
-
-            # Initialize episode
-            score = 0
+            
+            #LOG
+            stats.action_count = [0] * self._action_size
+            stats.ep_score = 0.0
+            stats.min_steps_to_complete = self._max_steps
 
             # Reset environment
             obs, info = self.env.reset(regenerate_rail=True, regenerate_schedule=True)
@@ -115,12 +110,12 @@ class ExcHandler:
                     agent_prev_obs[handle] = agent_obs[handle].copy()
 
 
-            for _ in range(self._max_steps-1):
+            for step in range(self._max_steps-1):
                 for handle in self.env.get_agent_handles():
                     if info['action_required'][handle]:
                         update_values[handle] = True
                         action = self.agent.act(agent_obs[handle])
-                        action_count[action] +=1
+                        stats.action_count[action] +=1
                     else :
                         update_values[handle] = False
                         action = 0        
@@ -148,39 +143,33 @@ class ExcHandler:
                     if next_obs[handle]:
                         agent_obs[handle] = self.obs_wrapper.normalize(next_obs[handle])
 
-                    score += all_rewards[handle]
+                    stats.ep_score += all_rewards[handle]
+                
+                if True in done.values() and stats.min_steps_to_complete==self._max_steps:
+                    stats.min_steps_to_complete = step +1
 
                 if done['__all__']:
                     break
             
             self.agent.on_episode_end()
 
-            # Collection information about training
-            tasks_finished = np.sum([int(done[idx]) for idx in self.env.get_agent_handles()])
-            completion_window.append(tasks_finished / max(1, self.env.get_num_agents()))
-            scores_window.append(score / (self._max_steps * self.env.get_num_agents()))
-            completion.append((np.mean(completion_window)))
-            scores.append(np.mean(scores_window))
-            action_probs = action_count / np.sum(action_count)
+            # Collection information about training after each episode
+            stats.episode_stats['completion_perc'] = np.sum([int(done[idx]) for idx in self.env.get_agent_handles()]) / max(1, self.env.get_num_agents())
+            stats.episode_stats['norm_score'] = stats.ep_score / (self._max_steps * self.env.get_num_agents())
+            #stats.episode_stats['action_probs'] = np.histogram(np.divide(stats.action_count,np.sum(stats.action_count))) 
+            stats.episode_stats['min_step_to_complete'] = stats.min_steps_to_complete
 
             print(
-                '\rTraining {} agents \t Episode {}\t Average Score: {:.3f}\t Eps:{:.4f}\t Dones: {:.2f}%\t Action Probabilities: \t {}'.format(
+                '\rTraining {} agents \t Episode {}\t Average Score: {:.3f}\t Dones: {:.2f}%'.format(
                     self.env.get_num_agents(),
-                    n,
-                    np.mean(scores_window),
-                    self.agent.eps,
-                    100 * np.mean(completion_window),
-                    action_probs
+                    ep_id,
+                    stats.episode_stats['norm_score'],
+                    stats.episode_stats['completion_perc']*100
                 ))
+            stats.on_episode_end(ep_id)
         
-        self.agent.save('checkpoints/' + id)
-
-        # Plot overall training progress at the end
-        plt.plot(scores)
-        plt.show()
-
-        plt.plot(completion)
-        plt.show()
+        self.agent.save('checkpoints/' + wandb.run.id)
+        
 
     def eval_agent(self,n_episodes):
 

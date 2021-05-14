@@ -136,3 +136,4 @@ dmypy.json
 
 #model checkpoints 
 /checkpoints
+/wandb
