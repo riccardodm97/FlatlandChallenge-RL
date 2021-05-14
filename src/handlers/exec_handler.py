@@ -1,5 +1,7 @@
 import random
 
+from collections import deque
+
 import wandb
 from utils.timer import Timer
 
@@ -94,6 +96,9 @@ class ExcHandler:
         training_timer = Timer()                                  
         training_timer.start()
         
+        scores_window = deque(maxlen=100)  
+        completion_window = deque(maxlen=100)
+        
         for ep_id in range(n_episodes):
             
             #LOG
@@ -154,8 +159,11 @@ class ExcHandler:
             self.agent.on_episode_end()
 
             # Collection information about training after each episode
-            stats.episode_stats['completion_perc'] = np.sum([int(done[idx]) for idx in self.env.get_agent_handles()]) / max(1, self.env.get_num_agents())
-            stats.episode_stats['norm_score'] = stats.ep_score / (self._max_steps * self.env.get_num_agents())
+            
+            completion_window.append(np.sum([int(done[idx]) for idx in self.env.get_agent_handles()]) / max(1, self.env.get_num_agents()))
+            stats.episode_stats['completion_perc'] = np.mean(completion_window)
+            scores_window.append(stats.ep_score / (self._max_steps * self.env.get_num_agents()))
+            stats.episode_stats['norm_score'] = np.mean(scores_window)
             #stats.episode_stats['action_probs'] = np.histogram(np.divide(stats.action_count,np.sum(stats.action_count))) 
             stats.episode_stats['min_step_to_complete'] = stats.min_steps_to_complete
 
