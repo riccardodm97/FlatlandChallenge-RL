@@ -91,8 +91,8 @@ class ExcHandler:
         action_dict = dict()
         
         #LOG
-        training_timer = Timer()                                  
-        training_timer.start()
+        # training_timer = Timer()                                  
+        # training_timer.start()
         
         for ep_id in range(n_episodes):
             
