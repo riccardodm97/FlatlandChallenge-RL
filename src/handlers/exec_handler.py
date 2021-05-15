@@ -43,36 +43,36 @@ class ExcHandler:
         wandb.config.obs_size = self._obs_size
 
 
-    def handleEnv(self, env_par : dict) -> Tuple[Observation,RailEnv,int]:
+    def handleEnv(self, environment_param : dict) -> Tuple[Observation,RailEnv,int]:
 
-        env : dict = env_par['env']
-        obs : dict = env_par['obs']
+        env_par : dict = environment_param['env']
+        obs_par : dict = environment_param['obs']
 
         # Instantiate observation 
-        obs_wrap_class = getattr(obs_wrap_classes, obs['class'])
-        obs_wrapper : Observation  = obs_wrap_class(obs) 
+        obs_wrap_class = getattr(obs_wrap_classes, obs_par['class'])
+        obs_wrapper : Observation  = obs_wrap_class(obs_par) 
 
         #TODO add malfunction , speed , prediction_builder
         
         #setup the environment
         env = RailEnv(
-            width=env['x_dim'],
-            height=env['y_dim'],
+            width=env_par['x_dim'],
+            height=env_par['y_dim'],
             rail_generator=sparse_rail_generator(
-                max_num_cities=env['n_cities'],
-                seed=env['seed'],
+                max_num_cities=env_par['n_cities'],
+                seed=env_par['seed'],
                 grid_mode=True,
-                max_rails_between_cities=env['max_rails_between_cities'],
-                max_rails_in_city=env['max_rails_in_city']
+                max_rails_between_cities=env_par['max_rails_between_cities'],
+                max_rails_in_city=env_par['max_rails_in_city']
             ),
             schedule_generator=sparse_schedule_generator(),
-            number_of_agents=env['n_agents'],
+            number_of_agents=env_par['n_agents'],
             obs_builder_object= obs_wrapper.builder,
-            random_seed=env['seed']
+            random_seed=env_par['seed']
         )
 
         # Max number of steps per episode as defined by flatland 
-        max_steps = int(4 * 2 * (env['x_dim'] + env['y_dim'] + (env['n_agents'] / env['n_cities'])))
+        max_steps = int(4 * 2 * (env_par['x_dim'] + env_par['y_dim'] + (env_par['n_agents'] / env_par['n_cities'])))
 
         return obs_wrapper, env, max_steps
     
@@ -105,8 +105,11 @@ class ExcHandler:
         action_dict = dict()
         
         for ep_id in range(n_episodes):
+
+            # Initialize agent 
+            self._agent.on_episode_start()
             
-            #LOG
+            # LOG
             stats.utils_stats['action_count'] = [0] * self._action_size
             stats.utils_stats['ep_score'] = 0.0
             stats.utils_stats['min_steps_to_complete'] = self._max_steps
@@ -161,8 +164,7 @@ class ExcHandler:
                 if done['__all__']:
                     break
             
-            self._agent.on_episode_end()
-            
+            # LOG 
             stats.completion_window.append(np.sum([int(done[idx]) for idx in self._env.get_agent_handles()]) / max(1, self._env.get_num_agents()))
             stats.score_window.append(stats.utils_stats['ep_score'] / (self._max_steps * self._env.get_num_agents()))
             stats.min_steps_window.append(stats.utils_stats['min_steps_to_complete'])
@@ -178,7 +180,10 @@ class ExcHandler:
                     stats.log_stats['average_score'],
                     stats.log_stats['dones']*100
                 ))
+
             stats.on_episode_end(ep_id)
+
+            self._agent.on_episode_end()
         
         self.checkpoint()
 

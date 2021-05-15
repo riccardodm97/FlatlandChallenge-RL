@@ -34,11 +34,11 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("-e", "--episodes", dest="episodes", help="Number of episodes to run", default=500, type=int)
     parser.add_argument("-pa", "--par_agn", dest="par_agn", help="Agent parameter file", default='parameters/agn_train_par/agn_base.json')
-    parser.add_argument("-pe", "--par_env", dest="par_env", help="Env parameter file", default='parameters/agn_train_par/env_base.json')
+    parser.add_argument("-pe", "--par_env", dest="par_env", help="Env parameter file", default='parameters/env_train_par/env_base.json')
     parser.add_argument('-c', '--checkpoint', dest="checkpoint", help="Checkpoint file to be loaded", default=None)
     args = parser.parse_args()
 
 
-    train_main(args.episodes, args.par_agn, args.env_par,'train', args.checkpoint)
+    train_main(args.episodes, args.par_agn, args.par_env, 'train', args.checkpoint)
 
     

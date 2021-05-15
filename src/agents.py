@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
+from statistics import mean
 import tensorflow as tf
 import numpy as np
 
 import src.replay_buffers as buffer_classes
 import src.handlers.stats_handler as stats
+from src.replay_buffers import ReplayBuffer
 
 class Agent(ABC):
 
@@ -15,7 +17,7 @@ class Agent(ABC):
         self.eval_mode = eval_mode
 
         self.agent_par = agn_par['agn']
-        self.train_par = agn_par['train']
+        self.train_par = agn_par['trn']
 
         self.t_step = 0
 
@@ -29,6 +31,9 @@ class Agent(ABC):
         
     @abstractmethod
     def step(self, obs, action, reward, next_obs, done): pass
+
+    @abstractmethod
+    def on_episode_start(self): pass
 
     @abstractmethod
     def on_episode_end(self): pass
@@ -51,6 +56,8 @@ class RndAgent(Agent):
         return np.random.choice(np.arange(self.action_size))
 
     def step(self, obs, action, reward, next_obs, done): pass
+
+    def on_episode_start(self): pass
 
     def on_episode_end(self): pass
 
@@ -75,9 +82,10 @@ class DQNAgent(Agent):
             self.update_every = self.train_par['learn_every']
             self.sample_size = self.train_par['sample_size']
             self.lr = self.train_par['learning_rate']
-
+            
+            #Instantiate bufferReplay object 
             buffer_class = getattr(buffer_classes, self.train_par['memory']['class'])
-            self.memory = buffer_class(self.train_par['memory']['mem_size'], self.obs_size)                     
+            self.memory : ReplayBuffer = buffer_class(self.train_par['memory']['mem_size'], self.obs_size)                     
 
         self.init_qnetwork()
 
@@ -97,10 +105,18 @@ class DQNAgent(Agent):
             model.compile(optimizer=tf.keras.optimizers.Adam(lr=self.lr), loss='mse')
 
         self.qnetwork = model
+    
+    def on_episode_start(self):
+        stats.log_stats['eps'] = self.eps
+        stats.utils_stats['ep_losses'] = []
 
     def on_episode_end(self):
-        self.eps = max(self.eps_min, self.eps_decay*self.eps)      #TODO evitare che debbano averlo tutti gli agent
-        stats.log_stats.setdefault('eps',[]).append(self.eps)
+        self.eps = max(self.eps_min, self.eps_decay*self.eps)    
+        try :
+            mean_loss = np.mean(stats.utils_stats['ep_losses'])
+            stats.log_stats['mean_episode_loss'] = mean_loss
+        except:
+             print('Never learned in this episode') 
 
     def act(self, obs) -> int : 
         state = tf.expand_dims(obs, axis=0)
@@ -132,7 +148,9 @@ class DQNAgent(Agent):
     
         q_target[batch_indexes,action_sample] = reward_sample + (self.gamma * np.max(q_next,axis=1) * (1 - done_sample))
 
-        self.qnetwork.fit(state_sample,q_target,batch_size = 32,verbose = 0)    
+        history = self.qnetwork.fit(state_sample,q_target,batch_size = 32,verbose = 0)    
+
+        stats.utils_stats['ep_losses'].append(history.history['loss'][0])
 
     def load(self,filepath):
         print('loading model from',filepath)

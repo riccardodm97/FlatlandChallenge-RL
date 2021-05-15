@@ -18,7 +18,10 @@ min_steps_window : Deque = deque(maxlen=100)
 def on_episode_end(ep_id):
     log_stats['episode'] = ep_id
     wandb.log(log_stats)
-    log_stats.clear()          #reset dic 
+
+    #reset some values 
+    log_stats.clear()
+
 
 
 
