@@ -1,4 +1,5 @@
 import random
+from typing import Tuple
 
 import wandb
 from utils.timer import Timer
@@ -19,75 +20,88 @@ from src.agents import Agent
 import src.handlers.stats_handler as stats
 
 class ExcHandler:
-    def __init__(self, params, training=True, checkpoint=None):
-        self._env_params = params['env'] # Environment
-        self._obs_params = params['obs'] # Observation
-        self._agn_params = params['agn'] # Agent
-        self._trn_params = params['trn'] # Training
+    def __init__(self, agn_par : dict, env_par : dict, mode : str, checkpoint : str = None):
+        self._agn_par = agn_par # Agent
+        self._env_par = env_par # Environment
 
-        self._training = training
+        self._mode = mode
+        self._checkpoint = checkpoint
 
         # Instantiate observation and environment 
-        obs_wrap_class = getattr(obs_wrap_classes, self._obs_params['class'])
-        self.obs_wrapper : Observation  = obs_wrap_class(self._obs_params) 
-        self.env = self.initEnv(self.obs_wrapper.builder)
+        self._obs_wrapper, self._env, self._max_steps = self.handleEnv(self._env_par)
 
         # The action space of flatland is 5 discrete actions
         self._action_size = 5
-        self._obs_size = self.obs_wrapper.get_obs_dim()
+        self._obs_size = self._obs_wrapper.get_obs_dim()
 
         # Instantiate agent 
-        agent_class = getattr(agent_classes, self._agn_params['class'])
-        self.agent : Agent = agent_class(self._obs_size, self._action_size, self._agn_params, self._trn_params, checkpoint , not self._training)
+        self._agent = self.handleAgent(self._agn_par)
         
-        # Max number of steps per episode as defined by flatland 
-        self._max_steps = int(4 * 2 * (self._env_params['x_dim'] + self._env_params['y_dim'] + (self._env_params['n_agents'] / self._env_params['n_cities'])))
-
         #LOG
         wandb.config.max_steps = self._max_steps
         wandb.config.action_size = self._action_size
         wandb.config.obs_size = self._obs_size
 
 
-    def initEnv(self, obs_builder):
+    def handleEnv(self, env_par : dict) -> Tuple[Observation,RailEnv,int]:
+
+        env : dict = env_par['env']
+        obs : dict = env_par['obs']
+
+        # Instantiate observation 
+        obs_wrap_class = getattr(obs_wrap_classes, env['class'])
+        obs_wrapper : Observation  = obs_wrap_class(obs) 
+
+        #TODO add malfunction , speed , prediction_builder
         
         #setup the environment
         env = RailEnv(
-            width=self._env_params['x_dim'],
-            height=self._env_params['y_dim'],
+            width=env['x_dim'],
+            height=env['y_dim'],
             rail_generator=sparse_rail_generator(
-                max_num_cities=self._env_params['n_cities'],
-                seed=self._env_params['seed'],
+                max_num_cities=env['n_cities'],
+                seed=env['seed'],
                 grid_mode=True,
-                max_rails_between_cities=self._env_params['max_rails_between_cities'],
-                max_rails_in_city=self._env_params['max_rails_in_city']
+                max_rails_between_cities=env['max_rails_between_cities'],
+                max_rails_in_city=env['max_rails_in_city']
             ),
             schedule_generator=sparse_schedule_generator(),
-            number_of_agents=self._env_params['n_agents'],
-            obs_builder_object=obs_builder
+            number_of_agents=env['n_agents'],
+            obs_builder_object= obs_wrapper.builder,
+            random_seed=env['seed']
         )
 
-        return env 
+        # Max number of steps per episode as defined by flatland 
+        max_steps = int(4 * 2 * (env['x_dim'] + env['y_dim'] + (env['n_agents'] / env['n_cities'])))
+
+        return obs_wrapper, env, max_steps
+    
+    def handleAgent(self, agn_par : dict) -> Agent:
+        agent_class = getattr(agent_classes, agn_par['agn']['class'])
+        agent : Agent = agent_class(self._obs_size, self._action_size, agn_par, self._checkpoint, self._mode)
+
+        return agent
     
     def start(self, n_episodes):
 
-        random.seed(self._env_params['seed'])
-        np.random.seed(self._env_params['seed'])
+        random.seed(self._env_par['env']['seed'])
+        np.random.seed(self._env_par['env']['seed'])
 
-        if self._training :
+        if self._mode == 'train' :
             self.train_agent(n_episodes)
-        else:
+        elif self.mode == 'eval':
             self.eval_agent(n_episodes)
+        else : raise ValueError('ERROR: mode should be either train or eval')
         
     
     def train_agent(self,n_episodes):
 
-        self.env.reset(True,True)
+        self._env.reset(True,True)
 
-        agent_obs = [None] * self.env.get_num_agents()
-        agent_prev_obs = [None] * self.env.get_num_agents()
-        agent_prev_action = [2] * self.env.get_num_agents()       #TODO perché??
-        update_values = [False] * self.env.get_num_agents()
+        agent_obs = [None] * self._env.get_num_agents()
+        agent_prev_obs = [None] * self._env.get_num_agents()
+        agent_prev_action = [2] * self._env.get_num_agents()       #TODO perché??
+        update_values = [False] * self._env.get_num_agents()
         action_dict = dict()
         
         for ep_id in range(n_episodes):
@@ -98,19 +112,19 @@ class ExcHandler:
             stats.min_steps_to_complete = self._max_steps
 
             # Reset environment
-            obs, info = self.env.reset(regenerate_rail=True, regenerate_schedule=True)
+            obs, info = self._env.reset(regenerate_rail=True, regenerate_schedule=True)
 
-            for handle in self.env.get_agent_handles():
+            for handle in self._env.get_agent_handles():
                 if obs[handle]:
-                    agent_obs[handle] = self.obs_wrapper.normalize(obs[handle])
+                    agent_obs[handle] = self._obs_wrapper.normalize(obs[handle])
                     agent_prev_obs[handle] = agent_obs[handle].copy()
 
 
             for step in range(self._max_steps-1):
-                for handle in self.env.get_agent_handles():
+                for handle in self._env.get_agent_handles():
                     if info['action_required'][handle]:
                         update_values[handle] = True
-                        action = self.agent.act(agent_obs[handle])
+                        action = self._agent.act(agent_obs[handle])
                         stats.action_count[action] +=1
                     else :
                         update_values[handle] = False
@@ -118,14 +132,14 @@ class ExcHandler:
                     action_dict.update({handle: action})
                     
                 # Environment step
-                next_obs, all_rewards, done, info = self.env.step(action_dict)
+                next_obs, all_rewards, done, info = self._env.step(action_dict)
 
                 # Update replay buffer and train agent
-                for handle in self.env.get_agent_handles():
+                for handle in self._env.get_agent_handles():
                     # Only update the values when we are done or when an action was taken and thus relevant information is present
                     if update_values or done['__all__']:
                         # Add state to memory
-                        self.agent.step(
+                        self._agent.step(
                             obs = agent_prev_obs[handle],
                             action = agent_prev_action[handle],
                             reward = all_rewards[handle],
@@ -137,7 +151,7 @@ class ExcHandler:
                         agent_prev_action[handle] = action_dict[handle]
 
                     if next_obs[handle]:
-                        agent_obs[handle] = self.obs_wrapper.normalize(next_obs[handle])
+                        agent_obs[handle] = self._obs_wrapper.normalize(next_obs[handle])
 
                     stats.ep_score += all_rewards[handle]
                 
@@ -147,57 +161,57 @@ class ExcHandler:
                 if done['__all__']:
                     break
             
-            self.agent.on_episode_end()
+            self._agent.on_episode_end()
             
-            stats.completion_window.append(np.sum([int(done[idx]) for idx in self.env.get_agent_handles()]) / max(1, self.env.get_num_agents()))
-            stats.score_window.append(stats.ep_score / (self._max_steps * self.env.get_num_agents()))
+            stats.completion_window.append(np.sum([int(done[idx]) for idx in self._env.get_agent_handles()]) / max(1, self._env.get_num_agents()))
+            stats.score_window.append(stats.ep_score / (self._max_steps * self._env.get_num_agents()))
             stats.min_steps_window.append(stats.min_steps_to_complete)
 
-            stats.episode_stats['average_score'] = np.mean(stats.score_window)
-            stats.episode_stats['dones'] = np.mean(stats.completion_window)
-            stats.episode_stats['min_step_to_complete'] = np.mean(stats.min_steps_window)
+            stats.log_stats['average_score'] = np.mean(stats.score_window)
+            stats.log_stats['dones'] = np.mean(stats.completion_window)
+            stats.log_stats['min_step_to_complete'] = np.mean(stats.min_steps_window)
 
             print(
                 '\rTraining {} agents \t Episode {}\t Average Score: {:.3f}\t Dones: {:.2f}%'.format(
-                    self.env.get_num_agents(),
+                    self._env.get_num_agents(),
                     ep_id,
-                    stats.episode_stats['average_score'],
-                    stats.episode_stats['dones']*100
+                    stats.log_stats['average_score'],
+                    stats.log_stats['dones']*100
                 ))
             stats.on_episode_end(ep_id)
         
-        self.agent.save('checkpoints/' + wandb.run.id)
+        self._agent.save('checkpoints/' + wandb.run.id)
         
 
     def eval_agent(self,n_episodes):
 
-        self.env.reset(True,True)
+        self._env.reset(True,True)
 
         env_renderer = RenderTool(self.env)
 
         action_dict = dict()
 
         for _ in range(n_episodes):
-            agent_obs = [None] * self.env.get_num_agents()
+            agent_obs = [None] * self._env.get_num_agents()
 
             # Reset environment
-            obs, info = self.env.reset(regenerate_rail=True, regenerate_schedule=True)
+            obs, info = self._env.reset(regenerate_rail=True, regenerate_schedule=True)
 
             env_renderer.reset()
 
             for _ in range(self._max_steps-1):
-                for handle in self.env.get_agent_handles():
+                for handle in self._env.get_agent_handles():
                     if obs[handle] :
-                        agent_obs[handle] = self.obs_wrapper.normalize(obs[handle])
+                        agent_obs[handle] = self._obs_wrapper.normalize(obs[handle])
 
                     action = 0    
                     if info['action_required'][handle]:
-                        action = self.agent.act(agent_obs[handle])
+                        action = self._agent.act(agent_obs[handle])
 
                     action_dict.update({handle: action})
                     
                 # Environment step
-                obs, all_rewards, done, info = self.env.step(action_dict)
+                obs, all_rewards, done, info = self._env.step(action_dict)
 
                 env_renderer.render_env(show=True, show_observations=True, show_predictions=False)
 

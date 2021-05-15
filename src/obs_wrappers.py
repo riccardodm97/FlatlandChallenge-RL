@@ -3,11 +3,16 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 from flatland.envs.observations import TreeObsForRailEnv
+from flatland.core.env_observation_builder import ObservationBuilder
 from utils.baseline_obs_utils import split_tree_into_feature_groups, norm_obs_clip
 
 class Observation(ABC):
     def __init__(self, parameters):
         self.parameters = parameters
+    
+    @property
+    def builder(self) -> ObservationBuilder:
+        return self._builder
         
     @abstractmethod
     def get_obs_dim(self): pass
@@ -19,11 +24,11 @@ class TreeObs(Observation):
 
     def __init__(self, parameters):
         super().__init__(parameters)
-        self.builder = TreeObsForRailEnv(max_depth=self.parameters['tree_depth'])
+        self._builder = TreeObsForRailEnv(max_depth=self.parameters['tree_depth'])
 
     def get_obs_dim(self):
         # Calculate the state size given the depth of the tree observation and the number of features
-        n_features_per_node = self.builder.observation_dim
+        n_features_per_node = self._builder.observation_dim
         n_nodes = 0
         for i in range(self.parameters['tree_depth'] + 1):
             n_nodes += np.power(4, i)
