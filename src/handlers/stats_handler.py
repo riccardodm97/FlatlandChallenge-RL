@@ -1,19 +1,20 @@
-from typing import Dict, List, Deque
+from typing import Dict, Deque
 from collections import deque
 import wandb
 
-
+#stats to be logged through wandb 
 log_stats : Dict = dict()
 
+#stats to be saved during a run to be able tu perform further calculations (NOT logged to wandb)
+utils_stats : Dict = dict() 
+
+#episode stats 
 score_window : Deque = deque(maxlen=100)
 completion_window : Deque = deque(maxlen=100)
 min_steps_window : Deque = deque(maxlen=100)
+#TODO add more 
 
-action_count : List 
-ep_score : float 
-min_steps_to_complete : int 
-
-
+#actual log call to wandb cloud 
 def on_episode_end(ep_id):
     log_stats['episode'] = ep_id
     wandb.log(log_stats)

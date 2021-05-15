@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 import tensorflow as tf
 import numpy as np
 
-from src.replay_buffers import ReplayBuffer_dq, ReplayBuffer_np
 import src.replay_buffers as buffer_classes
 import src.handlers.stats_handler as stats
 

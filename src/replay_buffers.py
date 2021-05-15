@@ -69,7 +69,7 @@ class ReplayBuffer_dq(ReplayBuffer):
 
     def __init__(self, mem_size, obs_size):
         self.memory = deque(maxlen=mem_size)
-        super().__init__(mem_size)
+        super().__init__(mem_size,obs_size)
         
     def store_experience(self, state, action, reward, new_state, done):
         e = Experience(np.array(state), action, reward, np.array(new_state), int(done))

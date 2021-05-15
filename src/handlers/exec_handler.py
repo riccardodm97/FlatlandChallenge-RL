@@ -49,7 +49,7 @@ class ExcHandler:
         obs : dict = env_par['obs']
 
         # Instantiate observation 
-        obs_wrap_class = getattr(obs_wrap_classes, env['class'])
+        obs_wrap_class = getattr(obs_wrap_classes, obs['class'])
         obs_wrapper : Observation  = obs_wrap_class(obs) 
 
         #TODO add malfunction , speed , prediction_builder
@@ -82,7 +82,7 @@ class ExcHandler:
 
         return agent
     
-    def start(self, n_episodes):
+    def start(self, n_episodes, show = False):
 
         random.seed(self._env_par['env']['seed'])
         np.random.seed(self._env_par['env']['seed'])
@@ -90,7 +90,7 @@ class ExcHandler:
         if self._mode == 'train' :
             self.train_agent(n_episodes)
         elif self.mode == 'eval':
-            self.eval_agent(n_episodes)
+            self.eval_agent(n_episodes, show)
         else : raise ValueError('ERROR: mode should be either train or eval')
         
     
@@ -107,9 +107,9 @@ class ExcHandler:
         for ep_id in range(n_episodes):
             
             #LOG
-            stats.action_count = [0] * self._action_size
-            stats.ep_score = 0.0
-            stats.min_steps_to_complete = self._max_steps
+            stats.utils_stats['action_count'] = [0] * self._action_size
+            stats.utils_stats['ep_score'] = 0.0
+            stats.utils_stats['min_steps_to_complete'] = self._max_steps
 
             # Reset environment
             obs, info = self._env.reset(regenerate_rail=True, regenerate_schedule=True)
@@ -125,7 +125,7 @@ class ExcHandler:
                     if info['action_required'][handle]:
                         update_values[handle] = True
                         action = self._agent.act(agent_obs[handle])
-                        stats.action_count[action] +=1
+                        stats.utils_stats['action_count'][action] +=1
                     else :
                         update_values[handle] = False
                         action = 0        
@@ -153,10 +153,10 @@ class ExcHandler:
                     if next_obs[handle]:
                         agent_obs[handle] = self._obs_wrapper.normalize(next_obs[handle])
 
-                    stats.ep_score += all_rewards[handle]
+                    stats.utils_stats['ep_score'] += all_rewards[handle]
                 
-                if True in done.values() and stats.min_steps_to_complete==self._max_steps:
-                    stats.min_steps_to_complete = step +1
+                if True in done.values() and stats.utils_stats['min_steps_to_complete']==self._max_steps:
+                    stats.utils_stats['min_steps_to_complete'] = step +1
 
                 if done['__all__']:
                     break
@@ -164,8 +164,8 @@ class ExcHandler:
             self._agent.on_episode_end()
             
             stats.completion_window.append(np.sum([int(done[idx]) for idx in self._env.get_agent_handles()]) / max(1, self._env.get_num_agents()))
-            stats.score_window.append(stats.ep_score / (self._max_steps * self._env.get_num_agents()))
-            stats.min_steps_window.append(stats.min_steps_to_complete)
+            stats.score_window.append(stats.utils_stats['ep_score'] / (self._max_steps * self._env.get_num_agents()))
+            stats.min_steps_window.append(stats.utils_stats['min_steps_to_complete'])
 
             stats.log_stats['average_score'] = np.mean(stats.score_window)
             stats.log_stats['dones'] = np.mean(stats.completion_window)
@@ -180,14 +180,16 @@ class ExcHandler:
                 ))
             stats.on_episode_end(ep_id)
         
-        self._agent.save('checkpoints/' + wandb.run.id)
-        
+        self.checkpoint()
 
-    def eval_agent(self,n_episodes):
+    def checkpoint(self):
+          self._agent.save('checkpoints/' + wandb.run.id)
+
+    def eval_agent(self, n_episodes, show):
 
         self._env.reset(True,True)
 
-        env_renderer = RenderTool(self.env)
+        if show : env_renderer = RenderTool(self._env)
 
         action_dict = dict()
 
@@ -197,7 +199,7 @@ class ExcHandler:
             # Reset environment
             obs, info = self._env.reset(regenerate_rail=True, regenerate_schedule=True)
 
-            env_renderer.reset()
+            if show : env_renderer.reset()
 
             for _ in range(self._max_steps-1):
                 for handle in self._env.get_agent_handles():
@@ -213,11 +215,11 @@ class ExcHandler:
                 # Environment step
                 obs, all_rewards, done, info = self._env.step(action_dict)
 
-                env_renderer.render_env(show=True, show_observations=True, show_predictions=False)
+                if show : env_renderer.render_env(show=True, show_observations=True, show_predictions=False)
 
 
                 if done['__all__']:
                     break
         
-        env_renderer.close_window()
+        if show : env_renderer.close_window()
         
