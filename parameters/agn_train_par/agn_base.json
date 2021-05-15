@@ -6,7 +6,10 @@
         "eps_decay": 0.997
     },
     "trn": {
-        "mem_size": 100000,
+        "memory": {
+            "class" : "ReplayBuffer_np",
+            "mem_size": 100000
+        },
         "sample_size": 128,
         "learn_every": 8,
         "learning_rate": 0.5e-4,

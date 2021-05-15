@@ -78,7 +78,7 @@ class ExcHandler:
     
     def handleAgent(self, agn_par : dict) -> Agent:
         agent_class = getattr(agent_classes, agn_par['agn']['class'])
-        agent : Agent = agent_class(self._obs_size, self._action_size, agn_par, self._checkpoint, self._mode)
+        agent : Agent = agent_class(self._obs_size, self._action_size, agn_par, self._checkpoint, True if self._mode == 'eval' else False)
 
         return agent
     

@@ -3,19 +3,20 @@ import tensorflow as tf
 import numpy as np
 
 from src.replay_buffers import ReplayBuffer_dq, ReplayBuffer_np
+import src.replay_buffers as buffer_classes
 import src.handlers.stats_handler as stats
 
 class Agent(ABC):
 
-    def __init__(self, obs_size, action_size, agent_par, train_par, checkpoint_path, eval_mode = False):
+    def __init__(self, obs_size, action_size, agn_par, checkpoint_path, eval_mode = False):
        
         self.obs_size = obs_size
         self.action_size = action_size
         self.checkpoint = checkpoint_path
         self.eval_mode = eval_mode
 
-        self.agent_par = agent_par
-        self.train_par = train_par
+        self.agent_par = agn_par['agn']
+        self.train_par = agn_par['train']
 
         self.t_step = 0
 
@@ -74,10 +75,10 @@ class DQNAgent(Agent):
             self.gamma = self.train_par['gamma']
             self.update_every = self.train_par['learn_every']
             self.sample_size = self.train_par['sample_size']
-            self.mem_size = self.train_par['mem_size']
             self.lr = self.train_par['learning_rate']
 
-            self.memory = ReplayBuffer_np(self.mem_size, self.obs_size)                     
+            buffer_class = getattr(buffer_classes, self.train_par['memory']['class'])
+            self.memory = buffer_class(self.train_par['memory']['mem_size'], self.obs_size)                     
 
         self.init_qnetwork()
 
@@ -100,7 +101,7 @@ class DQNAgent(Agent):
 
     def on_episode_end(self):
         self.eps = max(self.eps_min, self.eps_decay*self.eps)      #TODO evitare che debbano averlo tutti gli agent
-        stats.episode_stats.setdefault('eps',[]).append(self.eps)
+        stats.log_stats.setdefault('eps',[]).append(self.eps)
 
     def act(self, obs) -> int : 
         state = tf.expand_dims(obs, axis=0)
