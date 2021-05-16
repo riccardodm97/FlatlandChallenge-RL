@@ -89,7 +89,7 @@ class ExcHandler:
 
         if self._mode == 'train' :
             self.train_agent(n_episodes)
-        elif self.mode == 'eval':
+        elif self._mode == 'eval':
             self.eval_agent(n_episodes, show)
         else : raise ValueError('ERROR: mode should be either train or eval')
         

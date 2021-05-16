@@ -18,8 +18,8 @@ def train_main(episodes : int, agn_par_file, env_par_file, mode : str, checkpoin
         'num_episodes' : episodes,
         'mode' : mode,
         'from_checkpoint' : checkpoint_file,
-        'agn' : agn_par,
-        'env' : env_par,
+        'agent' : agn_par,
+        'environment' : env_par,
     }
     wandb.init(config=config, project='flatland-rl', name=id, group=mode)
 

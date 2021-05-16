@@ -1,32 +1,36 @@
-{
-    "env": {
-        "n_agents": 1,
-        "x_dim": 25,
-        "y_dim": 25,
-        "n_cities": 2,
-        "max_rails_between_cities": 2,
-        "max_rails_in_city": 2,
-        "seed": 42  
-    },
-    "obs": {
-        "class": "TreeObs",
-        "tree_depth": 2,
-        "radius": 10
-    },
-    "agn": {
-        "class": "DQNAgent",
-        "eps_start": 1.0,
-        "eps_min": 0.01,
-        "eps_decay": 0.997
-    },
-    "trn": {
-        "memory": {
-            "class" : "ReplayBuffer_np",
-            "mem_size": 100000
+{   
+    "agent": {
+        "agn": {
+            "class": "RndAgent",
+            "eps_start": 1.0,
+            "eps_min": 0.01,
+            "eps_decay": 0.997
         },
-        "sample_size": 128,
-        "learn_every": 8,
-        "learning_rate": 0.5e-4,
-        "gamma": 0.99
-    }
+        "trn": {
+            "memory": {
+                "class" : "ReplayBuffer_np",
+                "mem_size": 100000
+            },
+            "sample_size": 128,
+            "learn_every": 8,
+            "learning_rate": 0.5e-4,
+            "gamma": 0.99
+        }
+    },
+    "environment":{
+        "env": {
+            "n_agents": 1,
+            "x_dim": 25,
+            "y_dim": 25,
+            "n_cities": 2,
+            "max_rails_between_cities": 2,
+            "max_rails_in_city": 2,
+            "seed": 42  
+        },
+        "obs": {
+            "class": "TreeObs",
+            "tree_depth": 2,
+            "radius": 10
+        }
+    }   
 }
