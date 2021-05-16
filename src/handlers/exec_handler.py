@@ -163,6 +163,8 @@ class ExcHandler:
 
                 if done['__all__']:
                     break
+
+            self._agent.on_episode_end()
             
             # LOG 
             stats.completion_window.append(np.sum([int(done[idx]) for idx in self._env.get_agent_handles()]) / max(1, self._env.get_num_agents()))
@@ -183,8 +185,6 @@ class ExcHandler:
 
             stats.on_episode_end(ep_id)
 
-            self._agent.on_episode_end()
-        
         self.checkpoint()
 
     def checkpoint(self):

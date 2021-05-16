@@ -38,6 +38,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
 
-    eval_main(args.episodes, args.parameters,'eval', args.checkpoint, args.show)
+    eval_main(args.episodes, args.parameters, 'eval', args.checkpoint, args.show)
 
     
