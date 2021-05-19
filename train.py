@@ -1,6 +1,6 @@
 import json
-from datetime import datetime
 from argparse import ArgumentParser
+
 import wandb
 
 from src.handlers.exec_handler import ExcHandler
@@ -11,9 +11,7 @@ def train_main(episodes : int, agn_par_file, env_par_file, mode : str, checkpoin
         agn_par = json.load(agn_json_file)
         env_par = json.load(env_json_file)
 
-    # Unique ID for this run
-    now = datetime.now()
-    id = now.strftime('%d/%m/%H:%M:%S')
+    
     config = {
         'num_episodes' : episodes,
         'mode' : mode,
@@ -21,7 +19,10 @@ def train_main(episodes : int, agn_par_file, env_par_file, mode : str, checkpoin
         'agent' : agn_par,
         'environment' : env_par,
     }
-    wandb.init(config=config, project='flatland-rl', name=id, group=mode)
+    wandb.init(config=config, project='flatland-rl', group=mode)
+    #set run name to run id 
+    wandb.run.name = wandb.run.id
+    wandb.run.save()
 
     ex = ExcHandler(agn_par, env_par, mode, checkpoint_file)
     ex.start(episodes)
