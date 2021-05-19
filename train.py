@@ -1,33 +1,20 @@
 import json
-from datetime import datetime
 from argparse import ArgumentParser
-import wandb
+import os
 
-from src.handlers.exec_handler import ExcHandler
+from src.handlers.run import run
 
 
 def train_main(episodes : int, agn_par_file, env_par_file, mode : str, checkpoint_file = None): 
     with open(agn_par_file) as agn_json_file, open(env_par_file) as env_json_file:
-        agn_par = json.load(agn_json_file)
-        env_par = json.load(env_json_file)
+        par_agent = json.load(agn_json_file)
+        par_environment = json.load(env_json_file)
+    
+    PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 
-    # Unique ID for this run
-    now = datetime.now()
-    id = now.strftime('%d/%m/%H:%M:%S')
-    config = {
-        'num_episodes' : episodes,
-        'mode' : mode,
-        'from_checkpoint' : checkpoint_file,
-        'agent' : agn_par,
-        'environment' : env_par,
-    }
-    wandb.init(config=config, project='flatland-rl', name=id, group=mode)
-
-    ex = ExcHandler(agn_par, env_par, mode, checkpoint_file)
-    ex.start(episodes)
-
-    #TODO : save stats
-
+    run(episodes,par_agent,par_environment,mode,checkpoint_file,False,PROJECT_ROOT)
+     
+ 
 
 
 if __name__ == "__main__":
