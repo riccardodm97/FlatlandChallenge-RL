@@ -103,6 +103,10 @@ class ExcHandler:
         agent_prev_action = [2] * self._env.get_num_agents()       #TODO perché??
         update_values = [False] * self._env.get_num_agents()
         action_dict = dict()
+
+        smoothing = 0.99
+        stats.utils_stats['smoothed_ep_score'] = -1
+        stats.utils_stats['smoothed_dones'] = 0.0
         
         for ep_id in range(n_episodes):
 
@@ -158,8 +162,7 @@ class ExcHandler:
 
                     stats.utils_stats['ep_score'] += all_rewards[handle]
                 
-                if True in done.values() and stats.utils_stats['min_steps_to_complete']==self._max_steps:
-                    stats.utils_stats['min_steps_to_complete'] = step +1
+                stats.utils_stats['min_steps_to_complete'] = step
 
                 if done['__all__']:
                     break
@@ -171,16 +174,42 @@ class ExcHandler:
             stats.score_window.append(stats.utils_stats['ep_score'] / (self._max_steps * self._env.get_num_agents()))
             stats.min_steps_window.append(stats.utils_stats['min_steps_to_complete'])
 
+            stats.utils_stats['smoothed_ep_score'] = stats.utils_stats['smoothed_ep_score'] * smoothing + stats.utils_stats['ep_score'] * (1.0 - smoothing)
+            stats.utils_stats['dones'] = np.sum([int(done[idx]) for idx in self._env.get_agent_handles()]) / max(1, self._env.get_num_agents())
+            stats.utils_stats['smoothed_dones'] = stats.utils_stats['smoothed_dones'] * smoothing + stats.utils_stats['dones'] * (1.0 - smoothing)
+
+            stats.log_stats['score'] = stats.utils_stats['ep_score']
+            stats.log_stats['smoothed_score'] = stats.utils_stats['smoothed_ep_score']
             stats.log_stats['average_score'] = np.mean(stats.score_window)
-            stats.log_stats['dones'] = np.mean(stats.completion_window)
-            stats.log_stats['min_step_to_complete'] = np.mean(stats.min_steps_window)
+            stats.log_stats['dones'] = stats.utils_stats['dones']
+            stats.log_stats['smoothed_dones'] = stats.utils_stats['smoothed_dones']
+            stats.log_stats['average_dones'] = np.mean(stats.completion_window)
+            stats.log_stats['min_step_to_complete'] = stats.utils_stats['min_steps_to_complete']
+            stats.log_stats['average_min_step_to_complete'] = np.mean(stats.min_steps_window)
 
             print(
-                '\rTraining {} agents \t Episode {}\t Average Score: {:.3f}\t Dones: {:.2f}%'.format(
+                '\r🚂 Training {} agents' 
+                '\t 🏁 Episode {}'
+                '\t 🏆 Score: {}'
+                ' Smoothed: {:.3f}'
+                ' Average: {:.3f}'
+                '\t 💯 Dones: {:.2f}'
+                ' Smoothed: {:.2f}'
+                ' Average: {:.2f}%'
+                '\t 🧭 N° steps: {}'
+                ' Average: {:.2f}'
+                '\t 🎲 Epsilon: {:.3f}'.format(
                     self._env.get_num_agents(),
                     ep_id,
+                    stats.log_stats['score'],
+                    stats.log_stats['smoothed_score'],
                     stats.log_stats['average_score'],
-                    stats.log_stats['dones']*100
+                    stats.log_stats['dones'],
+                    stats.log_stats['smoothed_dones'],
+                    stats.log_stats['average_dones']*100,
+                    stats.log_stats['min_step_to_complete'],
+                    stats.log_stats['average_min_step_to_complete'],
+                    stats.log_stats['eps']
                 ))
 
             stats.on_episode_end(ep_id)
