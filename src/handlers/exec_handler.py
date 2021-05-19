@@ -188,7 +188,7 @@ class ExcHandler:
         self.checkpoint()
 
     def checkpoint(self):
-          self._agent.save('checkpoints/' + wandb.run.id)
+          self._agent.save(wandb.run.id)
 
     def eval_agent(self, n_episodes, show):
 
