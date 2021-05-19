@@ -1,31 +1,20 @@
 import json
 from argparse import ArgumentParser
+import os
 
-import wandb
-
-from src.handlers.exec_handler import ExcHandler
+from src.handlers.run import run
 
 
 def eval_main(episodes : int, parameter_file, mode : str, checkpoint_file, show : bool): 
     with open(parameter_file) as json_file:
         par = json.load(json_file)
+
+    par_agent = par['agent']
+    par_environment = par['environment']
+
+    PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
         
-    config = {
-        'num_episodes' : episodes,
-        'mode' : mode,
-        'from_checkpoint' : checkpoint_file,
-        'agent' : par['agent'],
-        'environment' : par['environment']
-    }
-    wandb.init(config=config, project='flatland-rl', group=mode)
-    #set run name to run id 
-    wandb.run.name = wandb.run.id
-    wandb.run.save()
-
-    ex = ExcHandler(par['agent'], par['environment'], mode, checkpoint_file)
-    ex.start(episodes, show)
-
-    #TODO : save stats
+    run(episodes,par_agent,par_environment,mode,checkpoint_file,show,PROJECT_ROOT)
 
 
 
