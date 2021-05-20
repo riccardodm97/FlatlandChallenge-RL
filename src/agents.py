@@ -10,7 +10,6 @@ import src.handlers.stats_handler as stats
 import src.replay_buffers as buffer_classes
 import src.models as model_classes
 from src.replay_buffers import ReplayBuffer
-from src.models import Model
 
 class Agent(ABC):
 
@@ -161,7 +160,9 @@ class DQNAgent(Agent):
         self.eps = max(self.eps_min, self.eps_decay*self.eps)    
         try :
             mean_loss = np.mean(stats.utils_stats['ep_losses'])
+            std_loss = np.std(stats.utils_stats['ep_losses'])
             stats.log_stats['mean_episode_loss'] = mean_loss
+            stats.log_stats['std_episode_loss'] = std_loss
         except:
              print('Never learned in this episode') 
 
