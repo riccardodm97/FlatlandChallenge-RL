@@ -13,7 +13,7 @@ class Model(ABC):
     @abstractmethod
     def get_model(self) -> tf.keras.models: pass
 
-class NaiveDQN(Model):
+class NaiveQNetwork(Model):
 
     def get_model(self):
         
@@ -29,4 +29,13 @@ class NaiveDQN(Model):
 
         return model
 
+class DuelingQNetwork(Model):
+
+    def get_model(self) -> tf.keras.models:
+        return super().get_model()
+
+class NoisyQNetwork(Model):
+
+    def get_model(self) -> tf.keras.models:
+        return super().get_model()
         
