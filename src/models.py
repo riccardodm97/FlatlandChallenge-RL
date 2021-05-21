@@ -38,10 +38,11 @@ class DuelingQNetwork(Model):
     def get_model(self) -> tf.keras.models:
 
         input = layers.Input(shape=(self.obs_size,))
-        out = layers.Dense(128, activation="relu")(input)
-        value = layers.Dense(8, activation="relu")(out)
+        value = layers.Dense(128, activation="relu")(input)
+        value = layers.Dense(128, activation="relu")(value)
         value = layers.Dense(1, activation="relu")(value)
-        advantage = layers.Dense(8, activation="relu")(out)
+        advantage = layers.Dense(128, activation="relu")(input)
+        advantage = layers.Dense(128, activation="relu")(advantage)
         advantage = layers.Dense(self.action_size, activation="relu")(advantage)
         advantage_mean = layers.Lambda(lambda x: K.mean(x, axis=1))(advantage)
         advantage = layers.Subtract()([advantage, advantage_mean])

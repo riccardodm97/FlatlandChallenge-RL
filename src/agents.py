@@ -131,11 +131,11 @@ class DQNAgent(Agent):
 
         batch_indexes = np.arange(self.sample_size)
 
+        q_targets = self.qnetwork.predict(state_sample)
+
         if self.agent_par['double']:
-            q_targets = self.qnetwork_target.predict(state_sample)
             q_next_values = self.qnetwork_target.predict(next_state_sample)[batch_indexes, np.argmax(self.qnetwork.predict(next_state_sample), axis=1)]
         else:
-            q_targets = self.qnetwork.predict(state_sample)
             q_next_values = np.max(self.qnetwork.predict(next_state_sample),axis=1)
 
         q_targets[batch_indexes,action_sample] = reward_sample + ((1 - done_sample) * self.gamma * q_next_values)
@@ -150,7 +150,11 @@ class DQNAgent(Agent):
     def target_update(self, tau = 0.5e-3):
         # Soft update model parameters.
         # θ_target = τ*θ_local + (1 - τ)*θ_target
-        self.qnetwork_target.set_weights(tau * np.array(self.qnetwork.get_weights()) + (1.0 - tau) * np.array(self.qnetwork_target.get_weights())) #TODO verificare
+        #self.qnetwork_target.set_weights(tau * np.array(self.qnetwork.get_weights()) + (1.0 - tau) * np.array(self.qnetwork_target.get_weights())) #TODO verificare
+        for t, e in zip(self.qnetwork_target.trainable_variables, self.qnetwork.trainable_variables):
+            t.assign(t * (1 - tau) + e * tau)
+
+
     
     def on_episode_start(self):
         stats.log_stats['eps'] = self.eps
