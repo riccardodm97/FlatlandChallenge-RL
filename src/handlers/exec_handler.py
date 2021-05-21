@@ -93,7 +93,7 @@ class ExcHandler:
         return obs_wrapper, env, max_steps
     
     def handleAgent(self, agn_par : dict) -> Agent:
-        agent_class = getattr(agent_classes, agn_par['agn']['class'])
+        agent_class = getattr(agent_classes, agn_par['class'])
         agent : Agent = agent_class(self._obs_size, self._action_size, agn_par, self._checkpoint, True if self._mode == 'eval' else False)
 
         return agent

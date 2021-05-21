@@ -94,17 +94,15 @@ class DQNAgent(Agent):
         
         # Instatiate deep network model 
         if self.checkpoint is not None :
-            self.qnetwort = self.load(self.checkpoint)
-            if self.agent_par['double']:
-                self.qnetwork_target = keras.models.clone_model(self.qnetwork)
-                self.qnetwork_target.build((self.obs_size,))
-                self.qnetwork_target.compile(optimizer=keras.optimizers.Adam(self.qnetwork.optimizer.learning_rate), loss='mse')
-                self.qnetwork_target.set_weights(self.qnetwork.get_weights())         
+            self.qnetwort = self.load(self.checkpoint)     
         else:
             model_class = getattr(model_classes,self.agent_par['model_class'])
-            self.qnetwork = model_class(self.obs_size,self.action_size,self.lr).get_model()
-            if self.agent_par['double']:
-                self.qnetwork_target = model_class(self.obs_size,self.action_size,self.lr).get_model()
+            self.qnetwork = model_class(self.obs_size,self.action_size,self.lr).get_compiled_model()
+            
+        #if double qNetwork instantiate target-model also 
+        if self.agent_par['double']:
+            self.qnetwork_target = model_class(self.obs_size,self.action_size,self.lr).get_model()
+            self.qnetwork_target.set_weights(self.qnetwork.get_weights())  
          
 
     def act(self, obs) -> int : 
@@ -153,7 +151,6 @@ class DQNAgent(Agent):
         #self.qnetwork_target.set_weights(tau * np.array(self.qnetwork.get_weights()) + (1.0 - tau) * np.array(self.qnetwork_target.get_weights())) #TODO verificare
         for t, e in zip(self.qnetwork_target.trainable_variables, self.qnetwork.trainable_variables):
             t.assign(t * (1 - tau) + e * tau)
-
 
     
     def on_episode_start(self):

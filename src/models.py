@@ -16,6 +16,9 @@ class Model(ABC):
     @abstractmethod
     def get_model(self) -> tf.keras.models: pass
 
+    @abstractmethod
+    def get_compiled_model(self) -> tf.keras.models: pass
+
 class NaiveQNetwork(Model):
 
     def get_model(self):
@@ -28,14 +31,17 @@ class NaiveQNetwork(Model):
                     keras.layers.Dense(self.action_size)
             ])
 
+        return model
+    
+    def get_compiled_model(self):
+        model = self.get_model()
         model.compile(optimizer=keras.optimizers.Adam(lr=self.lr), loss='mse')
 
-        return model
+        return model 
 
 class DuelingQNetwork(Model):
 
-    #TODO provvisorio !!!!!!
-    def get_model(self) -> tf.keras.models:
+    def get_model(self):
 
         input = layers.Input(shape=(self.obs_size,))
         value = layers.Dense(128, activation="relu")(input)
@@ -49,10 +55,15 @@ class DuelingQNetwork(Model):
         out = layers.Add()([value, advantage]) 
 
         model = keras.models.Model(inputs=input, outputs=out)
-        model.compile(optimizer=keras.optimizers.Adam(lr=self.lr), loss='mse')
 
         return model
 
+    def get_compiled_model(self):
+        model = self.get_model()
+        model.compile(optimizer=keras.optimizers.Adam(lr=self.lr), loss='mse')
+
+        return model 
+        
 
 class NoisyQNetwork(Model):
 
