@@ -109,6 +109,7 @@ class DQNAgent(Agent):
         state = tf.expand_dims(obs, axis=0)
 
         if np.random.random() < self.eps and not self.agent_par['noisy']: 
+            stats.log_stats['random_action_taken'] += 1
             return np.random.choice(self.action_size)
         else:
             return np.argmax(self.qnetwork.predict(state))     
@@ -156,6 +157,7 @@ class DQNAgent(Agent):
     def on_episode_start(self):
         stats.log_stats['eps'] = self.eps
         stats.utils_stats['ep_losses'] = []
+        stats.log_stats['random_action_taken'] = 0
 
     def on_episode_end(self):
         self.eps = max(self.eps_min, self.eps_decay*self.eps)    
@@ -166,6 +168,7 @@ class DQNAgent(Agent):
             stats.log_stats['std_episode_loss'] = std_loss
         except:
              print('Never learned in this episode') 
+            
 
     def load(self,filename):
         print('loading model from checkpoints/'+filename)
