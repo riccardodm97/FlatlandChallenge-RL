@@ -11,6 +11,7 @@ from flatland.envs.rail_env import RailEnv
 from flatland.envs.rail_generators import sparse_rail_generator
 from flatland.envs.schedule_generators import sparse_schedule_generator
 from flatland.utils.rendertools import RenderTool
+from flatland.envs.malfunction_generators import malfunction_from_params, MalfunctionParameters
 
 import src.obs_wrappers as obs_wrap_classes
 import src.agents as agent_classes
@@ -52,7 +53,21 @@ class ExcHandler:
         obs_wrap_class = getattr(obs_wrap_classes, obs_par['class'])
         obs_wrapper : Observation  = obs_wrap_class(obs_par) 
 
-        #TODO add malfunction , speed , prediction_builder
+        #init malfunction parameters
+        malfunction = None
+        if env_par['malfunction']['enabled']:
+            malfunction = malfunction_from_params(MalfunctionParameters(malfunction_rate=env_par['malfunction']['rate'],
+                                                                        min_duration=env_par['malfunction']['min_step'],
+                                                                        max_duration=env_par['malfunction']['max_step'])) 
+        #init speed map 
+        speed_map = None
+        if env_par['diff_speed_enabled']:
+            speed_map = {1.  : 0.25,  # Fast passenger train
+                        1./2.: 0.25,  # Fast freight train
+                        1./3.: 0.25,  # Slow commuter train
+                        1./4.: 0.25}  # Slow freight train
+
+        #TODO add prediction_builder
         
         #setup the environment
         env = RailEnv(
@@ -61,14 +76,15 @@ class ExcHandler:
             rail_generator=sparse_rail_generator(
                 max_num_cities=env_par['n_cities'],
                 seed=env_par['seed'],
-                grid_mode=True,
+                grid_mode=env_par['grid'],
                 max_rails_between_cities=env_par['max_rails_between_cities'],
                 max_rails_in_city=env_par['max_rails_in_city']
             ),
-            schedule_generator=sparse_schedule_generator(),
+            schedule_generator=sparse_schedule_generator(speed_ratio_map=speed_map),
             number_of_agents=env_par['n_agents'],
             obs_builder_object= obs_wrapper.builder,
-            random_seed=env_par['seed']
+            random_seed=env_par['seed'],
+            malfunction_generator_and_process_data = malfunction
         )
 
         # Max number of steps per episode as defined by flatland 
