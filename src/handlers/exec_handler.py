@@ -178,7 +178,8 @@ class ExcHandler:
 
                     stats.utils_stats['ep_score'] += all_rewards[handle]
                 
-                stats.utils_stats['min_steps_to_complete'] = step
+                if True in done.values() and stats.utils_stats['min_steps_to_complete']==self._max_steps:
+                    stats.utils_stats['min_steps_to_complete'] = step +1
 
                 if done['__all__']:
                     break
