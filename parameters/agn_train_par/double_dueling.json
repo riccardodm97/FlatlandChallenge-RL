@@ -1,8 +1,8 @@
 {
     "class": "DQNAgent",
-    "double": false,
+    "double": true,
     "noisy": false,
-    "model_class" : "NaiveQNetwork",
+    "model_class" : "DuelingQNetwork",
     "eps_start": 1.0,
     "eps_min": 0.01,
     "eps_decay": 0.997,
