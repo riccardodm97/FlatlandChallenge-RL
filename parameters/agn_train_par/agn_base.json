@@ -1,7 +1,7 @@
 {
     "class": "DQNAgent",
-    "double": "True",
-    "noisy": "False",
+    "double": true,
+    "noisy": false,
     "model_class" : "NaiveQNetwork",
     "eps_start": 1.0,
     "eps_min": 0.01,
