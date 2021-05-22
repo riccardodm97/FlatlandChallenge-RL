@@ -13,12 +13,12 @@ from flatland.envs.schedule_generators import sparse_schedule_generator
 from flatland.utils.rendertools import RenderTool
 from flatland.envs.malfunction_generators import malfunction_from_params, MalfunctionParameters
 
-import src.obs_wrappers as obs_wrap_classes
-import src.agents as agent_classes
-from src.obs_wrappers import Observation
-from src.agents import Agent
+import src.obs.obs_wrappers as obs_wrap_classes
+import src.policy.agents as agent_classes
+from src.obs.obs_wrappers import Observation
+from src.policy.agents import Agent
 
-import src.handlers.stats_handler as stats
+import src.utils.stats_handler as stats
 
 class ExcHandler:
     def __init__(self, agn_par : dict, env_par : dict, mode : str, checkpoint : str = None):

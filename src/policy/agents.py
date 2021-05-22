@@ -5,11 +5,11 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 
-import src.handlers.stats_handler as stats
+import src.utils.stats_handler as stats
 
-import src.replay_buffers as buffer_classes
-import src.models as model_classes
-from src.replay_buffers import ReplayBuffer
+import src.policy.replay_buffers as buffer_classes
+import src.policy.models as model_classes
+from src.policy.replay_buffers import ReplayBuffer
 
 class Agent(ABC):
 

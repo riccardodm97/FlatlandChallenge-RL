@@ -3,7 +3,7 @@ from numpy import append
 import wandb
 from git import Repo
 
-from src.handlers.exec_handler import ExcHandler
+from src.run.exec_handler import ExcHandler
 
 
 def run(episodes : int, par_agent : dict, par_environment : dict, mode : str, checkpoint_file, show : bool, project_path : str, tag : str):
