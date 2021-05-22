@@ -23,6 +23,20 @@ class ActionSelector(ABC):
     @abstractmethod
     def get_current_par_value(self) -> float: pass
 
+class RandomAS(ActionSelector):
+
+    def __init__(self, parameters, eval_mode):
+        super().__init__(parameters, eval_mode=eval_mode)
+    
+    def select_action(self, action_values) -> int:
+        return np.random.choice(action_values.size)
+    
+    def decay(self):
+        pass
+    
+    def get_current_par_value(self):
+        pass
+
 class GreedyAS(ActionSelector):
 
     def __init__(self, parameters):
@@ -60,15 +74,23 @@ class BoltzmannAS(ActionSelector):
 
     def __init__(self, parameters, eval_mode):
         super().__init__(parameters,eval_mode)
+        self._temperature = self._parameter_start
     
     def select_action(self, action_values):
-        raise NotImplementedError
-    
+        if self.eval_mode is False :
+            return np.argmax(action_values)
+        
+        val = action_values.copy()
+        exps = np.exp(val / self._temperature)
+        boltz_prob = exps / np.sum(exps)
+
+        return np.random.choice(action_values.size,p=boltz_prob)
+
     def decay(self):
-        raise NotImplementedError
+        self._temperature = max(self._parameter_end, self._parameter_decay*self._temperature) 
     
     def get_current_par_value(self):
-        raise NotImplementedError
+        self._temperature
 
     
 

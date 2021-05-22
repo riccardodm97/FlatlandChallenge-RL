@@ -57,7 +57,7 @@ class RndAgent(Agent):
     def load_params(self): pass 
 
     def act(self, obs):
-        return np.random.choice(np.arange(self.action_size))
+        return np.random.choice(np.arange(self.action_size))        #TODO use RandomAS
 
     def step(self, obs, action, reward, next_obs, done): pass
 
