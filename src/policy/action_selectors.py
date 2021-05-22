@@ -77,7 +77,7 @@ class BoltzmannAS(ActionSelector):
         self._temperature = self._parameter_start
     
     def select_action(self, action_values):
-        if self.eval_mode is False :
+        if self.eval_mode is True :
             return np.argmax(action_values)
         
         val = action_values.copy()
