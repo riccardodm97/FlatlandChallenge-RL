@@ -155,7 +155,7 @@ class DQNAgent(Agent):
 
     
     def on_episode_start(self):
-        stats.log_stats['eps'] = self.action_selector.get_current_par_value()    #TODO remove from here and put somewhere else; here it's not always the case that epsilon is present
+        stats.log_stats['decaying_par'] = self.action_selector.get_current_par_value()    #TODO remove from here and put somewhere else; here it's not always the case that epsilon is present
         stats.utils_stats['ep_losses'] = []
         stats.log_stats['random_action_taken'] = 0
 
