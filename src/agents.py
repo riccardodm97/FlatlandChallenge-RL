@@ -145,14 +145,14 @@ class DQNAgent(Agent):
         stats.utils_stats['ep_losses'].append(history.history['loss'][0])
 
         if self.agent_par['double']:
-            self.target_update()
+            self.target_update(self.agent_par['tau'])
     
     def target_update(self, tau = 0.5e-3):
         # Soft update model parameters.
         # θ_target = τ*θ_local + (1 - τ)*θ_target
         #self.qnetwork_target.set_weights(tau * np.array(self.qnetwork.get_weights()) + (1.0 - tau) * np.array(self.qnetwork_target.get_weights())) #TODO verificare
         for t, e in zip(self.qnetwork_target.trainable_variables, self.qnetwork.trainable_variables):
-            t.assign(t * (1 - tau) + e * tau)
+            t.assign(t * (1.0 - tau) + e * tau)
 
     
     def on_episode_start(self):
