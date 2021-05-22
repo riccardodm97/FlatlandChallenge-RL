@@ -12,7 +12,7 @@
         "mem_size": 100000
         },
     "sample_size": 128,
-    "learn_every": 8,
+    "learn_every": 10,
     "learning_rate": 0.5e-4,
     "gamma": 0.99
 
