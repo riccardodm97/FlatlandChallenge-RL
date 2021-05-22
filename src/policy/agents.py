@@ -5,10 +5,12 @@ import tensorflow as tf
 from tensorflow import keras
 
 import src.utils.stats_handler as stats
-
 import src.policy.replay_buffers as buffer_classes
 import src.policy.models as model_classes
+import src.policy.action_selectors as action_sel_classes
+
 from src.policy.replay_buffers import ReplayBuffer
+from src.policy.action_selectors import ActionSelector,GreedyAS
 
 class Agent(ABC):
 
@@ -74,12 +76,6 @@ class RndAgent(Agent):
 class DQNAgent(Agent):
 
     def load_params(self):
-
-        if not self.agent_par['noisy']:
-
-            self.eps = self.agent_par['eps_start'] if self.eval_mode is False else 0.05
-            self.eps_decay = self.agent_par['eps_decay'] 
-            self.eps_min = self.agent_par['eps_min']
         
         if not self.eval_mode :
             self.gamma = self.agent_par['gamma']
@@ -89,7 +85,13 @@ class DQNAgent(Agent):
             
             #Instantiate bufferReplay object 
             buffer_class = getattr(buffer_classes, self.agent_par['memory']['class'])
-            self.memory : ReplayBuffer = buffer_class(self.agent_par['memory']['mem_size'], self.obs_size)   
+            self.memory : ReplayBuffer = buffer_class(self.agent_par['memory']['mem_size'], self.obs_size) 
+
+        #Instantiate action selector
+        action_sel_class = getattr(action_sel_classes, self.agent_par['action_selection']['class'])
+        self.action_selector : ActionSelector = action_sel_class(self.agent_par['action_selection'], self.eval_mode) 
+        if self.agent_par['action_selection']['noisy']:
+            assert isinstance(self.action_selector, GreedyAS)    #if noisy is true the selector SHOULD be greedy
         
         # Instatiate deep network model 
         if self.checkpoint is not None :
@@ -107,12 +109,10 @@ class DQNAgent(Agent):
 
     def act(self, obs) -> int : 
         state = tf.expand_dims(obs, axis=0)
+        values = self.qnetwork.predict(state)
+        action = self.action_selector.select_action(values)
 
-        if np.random.random() < self.eps and not self.agent_par['noisy']: 
-            stats.log_stats['random_action_taken'] += 1
-            return np.random.choice(self.action_size)
-        else:
-            return np.argmax(self.qnetwork.predict(state))     
+        return action 
     
 
     def step(self, obs, action, reward, next_obs, done):  
@@ -155,12 +155,12 @@ class DQNAgent(Agent):
 
     
     def on_episode_start(self):
-        stats.log_stats['eps'] = self.eps
+        stats.log_stats['eps'] = self.action_selector.get_current_par_value()    #TODO remove from here and put somewhere else; here it's not always the case that epsilon is present
         stats.utils_stats['ep_losses'] = []
         stats.log_stats['random_action_taken'] = 0
 
     def on_episode_end(self):
-        self.eps = max(self.eps_min, self.eps_decay*self.eps)    
+        self.action_selector.decay()  
         try :
             mean_loss = np.mean(stats.utils_stats['ep_losses'])
             std_loss = np.std(stats.utils_stats['ep_losses'])
