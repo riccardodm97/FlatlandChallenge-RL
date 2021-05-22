@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from statistics import mean
 import numpy as np
 
 import tensorflow as tf

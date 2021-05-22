@@ -1,13 +1,15 @@
 {
+
     "class": "DQNAgent",
     "double": false,
-    "noisy": false,
     "model_class" : "NaiveQNetwork",
-    "eps_start": 1.0,
-    "eps_min": 0.01,
-    "eps_decay": 0.997,
-    "memory":
-        {
+    "action_selection":{
+        "noisy": false,
+        "p_start": 1.0,
+        "p_end": 0.01,
+        "p_decay": 0.997
+        },
+    "memory":{
         "class" : "ReplayBuffer_np",
         "mem_size": 100000
         },
