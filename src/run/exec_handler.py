@@ -160,7 +160,7 @@ class ExcHandler:
                 # Update replay buffer and train agent
                 for handle in self._env.get_agent_handles():
                     # Only update the values when we are done or when an action was taken and thus relevant information is present
-                    if update_values or done['__all__']:
+                    if update_values[handle] or done['__all__']:
                         # Add state to memory
                         self._agent.step(
                             obs = agent_prev_obs[handle],
@@ -215,7 +215,7 @@ class ExcHandler:
                 ' Average: {:.2f}%'
                 '\t 🧭 N° steps: {}'
                 ' Average: {:.2f}'
-                '\t 🎲 Epsilon: {:.3f}'.format(
+                '\t 🎲 Decaying par: {:.3f}'.format(
                     self._env.get_num_agents(),
                     ep_id,
                     stats.log_stats['score'],

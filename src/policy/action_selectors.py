@@ -91,7 +91,7 @@ class BoltzmannAS(ActionSelector):
         self._temperature = max(self._parameter_end, self._parameter_decay*self._temperature) 
     
     def get_current_par_value(self):
-        self._temperature
+        return self._temperature
 
     
 
