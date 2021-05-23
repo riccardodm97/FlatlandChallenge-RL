@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
+from typing import Tuple
 
 import src.utils.stats_handler as stats
 
@@ -15,7 +16,7 @@ class ActionSelector(ABC):
         self.eval_mode = eval_mode
     
     @abstractmethod
-    def select_action(self, action_values) -> int: pass
+    def select_action(self, action_values) -> Tuple[int,bool]: pass
 
     @abstractmethod
     def decay(self): pass
@@ -28,8 +29,8 @@ class RandomAS(ActionSelector):
     def __init__(self, parameters, eval_mode):
         super().__init__(parameters, eval_mode=eval_mode)
     
-    def select_action(self, action_values) -> int:
-        return np.random.choice(action_values.size)
+    def select_action(self, action_values) -> Tuple[int,bool]:
+        return np.random.choice(action_values.size), False
     
     def decay(self):
         pass
@@ -42,14 +43,14 @@ class GreedyAS(ActionSelector):
     def __init__(self, parameters):
         super().__init__(parameters)
     
-    def select_action(self, action_values):
-        return np.argmax(action_values)  
+    def select_action(self, action_values) -> Tuple[int,bool]:
+        raise NotImplementedError  
     
     def decay(self):
-        pass          # TODO check 
+        pass         
     
     def get_current_par_value(self):
-        return 0      # TODO check 
+        raise NotImplementedError     # return 0 ?? TODO check 
 
 class EpsilonGreedyAS(ActionSelector):
 
@@ -57,12 +58,13 @@ class EpsilonGreedyAS(ActionSelector):
         super().__init__(parameters,eval_mode)
         self._epsilon = self._parameter_start if self.eval_mode is False else 0.05
     
-    def select_action(self, action_values) -> int:
+    def select_action(self, action_values) -> Tuple[int,bool]:
+        max_action = np.argmax(action_values)    
         if np.random.random() < self._epsilon :
-            stats.log_stats['random_action_taken'] += 1     #LOG 
-            return np.random.choice(action_values.size)
+            rnd_action = np.random.choice(action_values.size)
+            return rnd_action, rnd_action==max_action
         else:
-            return np.argmax(action_values)     
+           return max_action, True
     
     def decay(self):
         self._epsilon = max(self._parameter_end, self._parameter_decay*self._epsilon)    
@@ -76,16 +78,18 @@ class BoltzmannAS(ActionSelector):
         super().__init__(parameters,eval_mode)
         self._temperature = self._parameter_start
     
-    def select_action(self, action_values):
-        if self.eval_mode is True :
-            return np.argmax(action_values)
+    def select_action(self, action_values) -> Tuple[int,bool]:
+        max_action = np.argmax(action_values)
+        if self.eval_mode:
+            return max_action, True
         
         val = action_values.copy()
         exps = np.exp(val / self._temperature)
         boltz_prob = exps / np.sum(exps, axis=1)
-        boltz_prob = boltz_prob[0]                #should be 1d array 
+        boltz_prob = boltz_prob[0]                #need to be 1d array 
 
-        return np.random.choice(action_values.size,p=boltz_prob)
+        rnd_action = np.random.choice(action_values.size,p=boltz_prob)
+        return rnd_action, rnd_action==max_action 
 
     def decay(self):
         self._temperature = max(self._parameter_end, self._parameter_decay*self._temperature) 

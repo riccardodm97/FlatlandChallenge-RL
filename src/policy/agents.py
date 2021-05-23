@@ -110,7 +110,9 @@ class DQNAgent(Agent):
     def act(self, obs) -> int : 
         state = tf.expand_dims(obs, axis=0)
         values = self.qnetwork.predict(state)
-        action = self.action_selector.select_action(values)
+        action, is_best = self.action_selector.select_action(values)
+
+        stats.utils_stats['exploration'] += 1-int(is_best)    #LOG
 
         return action 
     
@@ -157,17 +159,10 @@ class DQNAgent(Agent):
     def on_episode_start(self):
         stats.log_stats['decaying_par'] = self.action_selector.get_current_par_value()    #TODO remove from here and put somewhere else; here it's not always the case that epsilon is present
         stats.utils_stats['ep_losses'] = []
-        stats.log_stats['random_action_taken'] = 0
+        stats.utils_stats['exploration'] = 0
 
     def on_episode_end(self):
         self.action_selector.decay()  
-        try :
-            mean_loss = np.mean(stats.utils_stats['ep_losses'])
-            std_loss = np.std(stats.utils_stats['ep_losses'])
-            stats.log_stats['mean_episode_loss'] = mean_loss
-            stats.log_stats['std_episode_loss'] = std_loss
-        except:
-             print('Never learned in this episode') 
             
 
     def load(self,filename):
