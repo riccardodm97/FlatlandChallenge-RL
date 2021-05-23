@@ -2,7 +2,7 @@ import random
 from typing import Tuple
 
 import wandb
-from utils.timer import Timer
+from src.utils.timer import Timer
 
 import matplotlib.pyplot as plt
 import numpy as np
