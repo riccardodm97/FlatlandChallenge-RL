@@ -226,7 +226,7 @@ class ExcHandler:
                     stats.log_stats['average_dones']*100,
                     stats.log_stats['min_step_to_complete'],
                     stats.log_stats['average_min_step_to_complete'],
-                    stats.log_stats['eps']
+                    stats.log_stats['decaying_par']
                 ))
 
             stats.on_episode_end(ep_id)
