@@ -4,7 +4,7 @@ import numpy as np
 
 from flatland.envs.observations import TreeObsForRailEnv
 from flatland.core.env_observation_builder import ObservationBuilder
-from obs.baseline_obs_utils import split_tree_into_feature_groups, norm_obs_clip
+from src.obs.baseline_obs_utils import split_tree_into_feature_groups, norm_obs_clip
 
 class Observation(ABC):
     def __init__(self, parameters):
