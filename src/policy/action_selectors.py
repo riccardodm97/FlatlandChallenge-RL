@@ -2,8 +2,6 @@ from abc import ABC, abstractmethod
 import numpy as np
 from typing import Tuple
 
-import src.utils.stats_handler as stats
-
 
 class ActionSelector(ABC):
 
@@ -72,6 +70,7 @@ class EpsilonGreedyAS(ActionSelector):
     def get_current_par_value(self):
         return self._epsilon
 
+#TODO NON FUNZIONA CAPIRE PERCHE 
 class BoltzmannAS(ActionSelector):
 
     def __init__(self, parameters, eval_mode):

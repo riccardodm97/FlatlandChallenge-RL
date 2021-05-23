@@ -5,7 +5,7 @@
     "model_class": "DuelingQNetwork",
     "action_selection":{
         "noisy": false,
-        "class": "BoltzmannAS",
+        "class": "EpsilonGreedyAS",
         "p_start": 1.0,
         "p_end": 0.01,
         "p_decay": 0.997
