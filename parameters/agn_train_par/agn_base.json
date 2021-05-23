@@ -5,6 +5,7 @@
     "model_class" : "NaiveQNetwork",
     "action_selection":{
         "noisy": false,
+        "class": "EpsilonGreedyAS",
         "p_start": 1.0,
         "p_end": 0.01,
         "p_decay": 0.997

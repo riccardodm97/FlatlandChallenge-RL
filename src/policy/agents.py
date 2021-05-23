@@ -135,7 +135,7 @@ class DQNAgent(Agent):
         if self.agent_par['double']:
             q_next_values = self.qnetwork_target.predict(next_state_sample)[batch_indexes, np.argmax(self.qnetwork.predict(next_state_sample), axis=1)]
         else:
-            q_next_values = np.max(self.qnetwork.predict(next_state_sample),axis=1)
+            q_next_values = np.max(self.qnetwork.predict(next_state_sample), axis=1)
 
         q_targets[batch_indexes,action_sample] = reward_sample + ((1 - done_sample) * self.gamma * q_next_values)
 

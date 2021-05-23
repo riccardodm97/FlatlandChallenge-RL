@@ -82,7 +82,8 @@ class BoltzmannAS(ActionSelector):
         
         val = action_values.copy()
         exps = np.exp(val / self._temperature)
-        boltz_prob = exps / np.sum(exps)
+        boltz_prob = exps / np.sum(exps, axis=1)
+        boltz_prob = boltz_prob[0]                #should be 1d array 
 
         return np.random.choice(action_values.size,p=boltz_prob)
 
