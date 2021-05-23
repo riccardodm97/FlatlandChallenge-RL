@@ -2,7 +2,7 @@ import json
 from argparse import ArgumentParser
 import os
 
-from src.handlers.run import run
+from src.run.run import run
 
 
 def train_main(episodes : int, agn_par_file, env_par_file, mode : str, checkpoint_file, tag : str ): 
