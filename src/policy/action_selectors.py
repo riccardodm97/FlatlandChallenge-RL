@@ -46,10 +46,10 @@ class GreedyAS(ActionSelector):
         return np.argmax(action_values)  
     
     def decay(self):
-        return None          # TODO check 
+        pass          # TODO check 
     
     def get_current_par_value(self):
-        raise NotImplementedError
+        return 0      # TODO check 
 
 class EpsilonGreedyAS(ActionSelector):
 
