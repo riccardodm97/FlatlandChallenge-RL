@@ -1,5 +1,3 @@
-
-from numpy import append
 import wandb
 from git import Repo
 

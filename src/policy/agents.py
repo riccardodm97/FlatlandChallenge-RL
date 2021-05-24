@@ -151,7 +151,6 @@ class DQNAgent(Agent):
     def target_update(self, tau = 0.5e-3):
         # Soft update model parameters.
         # θ_target = τ*θ_local + (1 - τ)*θ_target
-        #self.qnetwork_target.set_weights(tau * np.array(self.qnetwork.get_weights()) + (1.0 - tau) * np.array(self.qnetwork_target.get_weights())) #TODO verificare
         for t, e in zip(self.qnetwork_target.trainable_variables, self.qnetwork.trainable_variables):
             t.assign(t * (1.0 - tau) + e * tau)
 

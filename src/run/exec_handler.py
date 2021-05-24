@@ -4,7 +4,6 @@ from typing import Tuple
 import wandb
 from src.utils.timer import Timer
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 from flatland.envs.rail_env import RailEnv
@@ -205,7 +204,7 @@ class ExcHandler:
             stats.log_stats['average_dones'] = np.mean(stats.completion_window)
             stats.log_stats['min_step_to_complete'] = stats.utils_stats['min_steps_to_complete']
             stats.log_stats['average_min_step_to_complete'] = np.mean(stats.min_steps_window)
-            stats.log_stats['exploration'] = stats.utils_stats['exploration'] / max(1, self._env.get_num_agents())
+            stats.log_stats['exploration'] = stats.utils_stats['exploration'] / step * max(1, self._env.get_num_agents())
             try :
                 stats.log_stats['mean_episode_loss'] = np.mean(stats.utils_stats['ep_losses'])
                 stats.log_stats['std_episode_loss'] = np.std(stats.utils_stats['ep_losses'])
