@@ -273,7 +273,7 @@ class ExcHandler:
                     stats.log_stats['average_score'],
                     stats.utils_stats['completion']*100,
                     stats.log_stats['average_completion']*100,
-                    np.mean(stats.utils_stats['steps_first_to_complete'] / self._max_steps ,stats.utils_stats['steps_last_to_complete'] / self._max_steps),
+                    np.mean([stats.utils_stats['steps_first_to_complete'] / self._max_steps, stats.utils_stats['steps_last_to_complete'] / self._max_steps]),
                     stats.log_stats['decaying_par']
                 ))
 
