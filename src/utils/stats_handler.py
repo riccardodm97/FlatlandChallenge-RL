@@ -12,6 +12,7 @@ utils_stats : Dict = dict()
 score_window : Deque = deque(maxlen=100)
 completion_window : Deque = deque(maxlen=100)
 min_steps_window : Deque = deque(maxlen=100)
+exploration_window : Deque = deque(maxlen=100)
 #TODO add more 
 
 #actual log call to wandb cloud 
