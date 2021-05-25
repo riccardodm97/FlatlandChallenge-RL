@@ -10,7 +10,7 @@ def run(episodes : int, par_agent : dict, par_environment : dict, mode : str, ch
 
     #check if it's running on gpu 
     available_physical_devices = len(tf.config.list_physical_devices('GPU'))
-    print("GPUs Available:",'True, Num :',available_physical_devices if available_physical_devices>0 else 'False')
+    print("GPUs Available:",'True, Num :'+str(available_physical_devices) if available_physical_devices>0 else 'False')
 
     #in order to log the current branch from which we are logging to wandb
     repo = Repo(project_path)

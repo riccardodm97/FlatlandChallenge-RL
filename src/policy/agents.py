@@ -107,14 +107,24 @@ class DQNAgent(Agent):
             self.qnetwork_target.set_weights(self.qnetwork.get_weights())  
          
 
+    # TODO : RIMETTERE QUESTO MA EVITARE CHE DEBBA FARE PREDICT OGNI VOLTA 
+    # def act(self, obs) -> int : 
+    #     state = tf.expand_dims(obs, axis=0)
+    #     values = self.qnetwork.predict(state)
+    #     action, is_best = self.action_selector.select_action(values)
+
+    #     stats.utils_stats['exploration'] += 1-int(is_best)    #LOG
+
+    #     return action 
+    
     def act(self, obs) -> int : 
         state = tf.expand_dims(obs, axis=0)
-        values = self.qnetwork.predict(state)
-        action, is_best = self.action_selector.select_action(values)
 
-        stats.utils_stats['exploration'] += 1-int(is_best)    #LOG
-
-        return action 
+        if np.random.random() < self.action_selector.get_current_par_value(): 
+            stats.utils_stats['exploration'] += 1    #LOG
+            return np.random.choice(self.action_size)
+        else:
+            return np.argmax(self.qnetwork.predict(state))
     
 
     def step(self, obs, action, reward, next_obs, done):  
