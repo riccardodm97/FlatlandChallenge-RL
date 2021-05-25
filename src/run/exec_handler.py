@@ -43,6 +43,8 @@ class ExcHandler:
         wandb.config.obs_size = self._obs_size
 
 
+
+
     def handleEnv(self, environment_param : dict) -> Tuple[Observation,RailEnv,int]:
 
         env_par : dict = environment_param['env']
@@ -122,6 +124,9 @@ class ExcHandler:
         smoothing = 0.99
         stats.utils_stats['smoothed_ep_score'] = -1
         stats.utils_stats['smoothed_dones'] = 0.0
+
+        learn_timer = Timer()
+        act_timer = Timer()
         
         for ep_id in range(n_episodes):
 
@@ -132,6 +137,9 @@ class ExcHandler:
             stats.utils_stats['action_count'] = [0] * self._action_size
             stats.utils_stats['ep_score'] = 0.0
             stats.utils_stats['min_steps_to_complete'] = self._max_steps
+
+            learn_timer.reset()
+            act_timer.reset()
 
             # Reset environment
             obs, info = self._env.reset(regenerate_rail=True, regenerate_schedule=True)
@@ -146,7 +154,9 @@ class ExcHandler:
                 for handle in self._env.get_agent_handles():
                     if info['action_required'][handle]:
                         update_values[handle] = True
+                        act_timer.start()
                         action = self._agent.act(agent_obs[handle])
+                        act_timer.end()
                         stats.utils_stats['action_count'][action] +=1
                     else :
                         update_values[handle] = False
@@ -161,6 +171,7 @@ class ExcHandler:
                     # Only update the values when we are done or when an action was taken and thus relevant information is present
                     if update_values[handle] or done['__all__']:
                         # Add state to memory
+                        learn_timer.start()
                         self._agent.step(
                             obs = agent_prev_obs[handle],
                             action = agent_prev_action[handle],
@@ -168,6 +179,7 @@ class ExcHandler:
                             next_obs = agent_obs[handle],
                             done = done[handle]
                         )
+                        learn_timer.end()
                         
                         agent_prev_obs[handle] = agent_obs[handle].copy()
                         agent_prev_action[handle] = action_dict[handle]
@@ -178,7 +190,7 @@ class ExcHandler:
                     stats.utils_stats['ep_score'] += all_rewards[handle]
                 
                 if True in done.values() and stats.utils_stats['min_steps_to_complete']==self._max_steps:
-                    stats.utils_stats['min_steps_to_complete'] = step +1
+                    stats.utils_stats['min_steps_to_complete'] = step + 1
                 
                 #print('step ',step)
 
@@ -189,22 +201,25 @@ class ExcHandler:
             
             # LOG 
             stats.completion_window.append(np.sum([int(done[idx]) for idx in self._env.get_agent_handles()]) / max(1, self._env.get_num_agents()))
-            stats.score_window.append(stats.utils_stats['ep_score'] / (self._max_steps * self._env.get_num_agents()))
-            stats.min_steps_window.append(stats.utils_stats['min_steps_to_complete'])
+            stats.score_window.append(stats.utils_stats['ep_score'] / (self._max_steps * max(1, self._env.get_num_agents())))
+            stats.min_steps_window.append(stats.utils_stats['min_steps_to_complete'] / self._max_steps)
+            stats.exploration_window.append(stats.utils_stats['exploration'] / step)
 
             stats.utils_stats['smoothed_ep_score'] = stats.utils_stats['smoothed_ep_score'] * smoothing + stats.utils_stats['ep_score'] * (1.0 - smoothing)
             stats.utils_stats['dones'] = np.sum([int(done[idx]) for idx in self._env.get_agent_handles()]) / max(1, self._env.get_num_agents())
             stats.utils_stats['smoothed_dones'] = stats.utils_stats['smoothed_dones'] * smoothing + stats.utils_stats['dones'] * (1.0 - smoothing)
 
-            stats.log_stats['score'] = stats.utils_stats['ep_score']
+#            stats.log_stats['score'] = stats.utils_stats['ep_score']
             stats.log_stats['smoothed_score'] = stats.utils_stats['smoothed_ep_score']
             stats.log_stats['average_score'] = np.mean(stats.score_window)
-            stats.log_stats['dones'] = stats.utils_stats['dones']
+#            stats.log_stats['dones'] = stats.utils_stats['dones']
             stats.log_stats['smoothed_dones'] = stats.utils_stats['smoothed_dones']
             stats.log_stats['average_dones'] = np.mean(stats.completion_window)
-            stats.log_stats['min_step_to_complete'] = stats.utils_stats['min_steps_to_complete']
+#            stats.log_stats['min_step_to_complete'] = np.mean(stats.min_steps_window)
             stats.log_stats['average_min_step_to_complete'] = np.mean(stats.min_steps_window)
-            stats.log_stats['exploration'] = stats.utils_stats['exploration'] / step * max(1, self._env.get_num_agents())
+            stats.log_stats['exploration'] = np.mean(stats.exploration_window)
+            stats.log_stats['learning_time'] = learn_timer.get()
+            stats.log_stats['acting_time'] = act_timer.get()
             try :
                 stats.log_stats['mean_episode_loss'] = np.mean(stats.utils_stats['ep_losses'])
                 stats.log_stats['std_episode_loss'] = np.std(stats.utils_stats['ep_losses'])
@@ -214,24 +229,18 @@ class ExcHandler:
             print(
                 '\r🚂 Training {} agents' 
                 '\t 🏁 Episode {}'
-                '\t 🏆 Score: {}'
-                ' Smoothed: {:.3f}'
+                '\t 🏆 Smoothed Score: {:.3f}'
                 ' Average: {:.3f}'
-                '\t 💯 Dones: {:.2f}'
-                ' Smoothed: {:.2f}'
+                '\t 💯 Smoothed Dones: {:.2f}'
                 ' Average: {:.2f}%'
-                '\t 🧭 N° steps: {}'
-                ' Average: {:.2f}'
+                '\t 🧭 Average N° steps: {:.2f}'
                 '\t 🎲 Decaying par: {:.3f}'.format(
                     self._env.get_num_agents(),
                     ep_id,
-                    stats.log_stats['score'],
                     stats.log_stats['smoothed_score'],
                     stats.log_stats['average_score'],
-                    stats.log_stats['dones'],
                     stats.log_stats['smoothed_dones'],
                     stats.log_stats['average_dones']*100,
-                    stats.log_stats['min_step_to_complete'],
                     stats.log_stats['average_min_step_to_complete'],
                     stats.log_stats['decaying_par']
                 ))
