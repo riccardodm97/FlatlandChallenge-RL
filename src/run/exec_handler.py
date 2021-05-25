@@ -256,6 +256,7 @@ class ExcHandler:
             stats.log_stats['smoothed_acting_time'] = np.mean(stats.act_timer_window)
             stats.log_stats['mean_episode_loss'] = np.mean(stats.utils_stats['ep_losses'])
             stats.log_stats['std_episode_loss'] = np.std(stats.utils_stats['ep_losses'])
+            stats.log_stats['buffer_level'] = len(self._agent.memory)
             
             print(
                 '\r🚂 Training {} agents' 
