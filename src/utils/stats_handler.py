@@ -11,8 +11,12 @@ utils_stats : Dict = dict()
 #episode stats 
 score_window : Deque = deque(maxlen=100)
 completion_window : Deque = deque(maxlen=100)
-min_steps_window : Deque = deque(maxlen=100)
+steps_first_window : Deque = deque(maxlen=100)
+steps_last_window : Deque = deque(maxlen=100)
 exploration_window : Deque = deque(maxlen=100)
+act_timer_window : Deque = deque(maxlen=100)
+learn_timer_window : Deque = deque(maxlen=100)
+
 #TODO add more 
 
 #actual log call to wandb cloud 

@@ -173,7 +173,6 @@ class DQNAgent(Agent):
     def on_episode_end(self):
         self.action_selector.decay()  
             
-
     def load(self,filename):
         print('loading model from checkpoints/'+filename)
         return keras.models.load_model('checkpoints/'+filename)

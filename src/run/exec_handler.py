@@ -20,6 +20,7 @@ from src.policy.agents import Agent
 import src.utils.stats_handler as stats
 
 class ExcHandler:
+
     def __init__(self, agn_par : dict, env_par : dict, mode : str, checkpoint : str = None):
         self._agn_par = agn_par # Agent
         self._env_par = env_par # Environment
@@ -41,7 +42,6 @@ class ExcHandler:
         wandb.config.max_steps = self._max_steps
         wandb.config.action_size = self._action_size
         wandb.config.obs_size = self._obs_size
-
 
 
 
@@ -121,9 +121,12 @@ class ExcHandler:
         update_values = [False] * self._env.get_num_agents()
         action_dict = dict()
 
-        smoothing = 0.99
-        stats.utils_stats['smoothed_ep_score'] = -1
-        stats.utils_stats['smoothed_dones'] = 0.0
+        stats.utils_stats['smoothed_score'] = -1
+        stats.utils_stats['smoothed_completion'] = 0.0
+
+        smoothed_eval_normalized_score = -1.0
+        smoothed_eval_completion = 0.0
+        smoothing = 0.9
 
         learn_timer = Timer()
         act_timer = Timer()
@@ -134,9 +137,12 @@ class ExcHandler:
             self._agent.on_episode_start()
             
             # LOG
-            stats.utils_stats['action_count'] = [0] * self._action_size
+            stats.utils_stats['action_count'] = 0
             stats.utils_stats['ep_score'] = 0.0
-            stats.utils_stats['min_steps_to_complete'] = self._max_steps
+            stats.utils_stats['steps_first_to_complete'] = self._max_steps
+            stats.utils_stats['steps_last_to_complete'] = 0
+            stats.utils_stats['learn_time_steps'] = []
+            stats.utils_stats['act_time_steps'] = []
 
             learn_timer.reset()
             act_timer.reset()
@@ -154,10 +160,11 @@ class ExcHandler:
                 for handle in self._env.get_agent_handles():
                     if info['action_required'][handle]:
                         update_values[handle] = True
-                        act_timer.start()
+                        act_timer.start_reset()
                         action = self._agent.act(agent_obs[handle])
                         act_timer.end()
-                        stats.utils_stats['action_count'][action] +=1
+                        stats.utils_stats['act_time_steps'].append(act_timer.get())
+                        stats.utils_stats['action_count']+=1
                     else :
                         update_values[handle] = False
                         action = 0        
@@ -171,7 +178,7 @@ class ExcHandler:
                     # Only update the values when we are done or when an action was taken and thus relevant information is present
                     if update_values[handle] or done['__all__']:
                         # Add state to memory
-                        learn_timer.start()
+                        learn_timer.start_reset()
                         self._agent.step(
                             obs = agent_prev_obs[handle],
                             action = agent_prev_action[handle],
@@ -180,68 +187,92 @@ class ExcHandler:
                             done = done[handle]
                         )
                         learn_timer.end()
+                        stats.utils_stats['learn_time_steps'].append(learn_timer.get())
                         
                         agent_prev_obs[handle] = agent_obs[handle].copy()
                         agent_prev_action[handle] = action_dict[handle]
 
+                    # Preprocess the new observations
                     if next_obs[handle]:
                         agent_obs[handle] = self._obs_wrapper.normalize(next_obs[handle])
 
                     stats.utils_stats['ep_score'] += all_rewards[handle]
                 
-                if True in done.values() and stats.utils_stats['min_steps_to_complete']==self._max_steps:
-                    stats.utils_stats['min_steps_to_complete'] = step + 1
-                
-                #print('step ',step)
+                if True in done.values() and stats.utils_stats['steps_first_to_complete']==self._max_steps:
+                    stats.utils_stats['steps_first_to_complete'] = step + 1
+
+                stats.utils_stats['steps_last_to_complete'] = step + 1 
 
                 if done['__all__']:
                     break
 
             self._agent.on_episode_end()
+
+            # Evaluate policy and log results at some interval
+            if ep_id % 200 == 0 or ep_id == n_episodes-1 :
+                scores, completions, nb_steps_eval = self.eval_agent(10,False)
+
+                stats.log_stats["evaluation/scores_min"] = np.min(scores)
+                stats.log_stats["evaluation/scores_max"] = np.max(scores)
+                stats.log_stats["evaluation/scores_mean"] = np.mean(scores)
+                stats.log_stats["evaluation/scores_std"] = np.std(scores)
+                stats.log_stats["evaluation/completions_min"] = np.min(completions)
+                stats.log_stats["evaluation/completions_max"] = np.max(completions)
+                stats.log_stats["evaluation/completions_mean"] = np.mean(completions)
+                stats.log_stats["evaluation/completions_std"] = np.std(completions)
+                stats.log_stats["evaluation/nb_steps_min"] = np.min(nb_steps_eval)
+                stats.log_stats["evaluation/nb_steps_max"] = np.max(nb_steps_eval)
+                stats.log_stats["evaluation/nb_steps_mean"]=  np.mean(nb_steps_eval)
+                stats.log_stats["evaluation/nb_steps_std"] = np.std(nb_steps_eval)
+
+                smoothed_eval_normalized_score = smoothed_eval_normalized_score * smoothing + np.mean(scores) * (1.0 - smoothing)
+                smoothed_eval_completion = smoothed_eval_completion * smoothing + np.mean(completions) * (1.0 - smoothing)
+                stats.log_stats["evaluation/smoothed_score"] = smoothed_eval_normalized_score 
+                stats.log_stats["evaluation/smoothed_completion"] = smoothed_eval_completion
             
-            # LOG 
-            stats.completion_window.append(np.sum([int(done[idx]) for idx in self._env.get_agent_handles()]) / max(1, self._env.get_num_agents()))
+            # LOGS
+            stats.utils_stats['completion'] = np.sum([int(done[idx]) for idx in self._env.get_agent_handles()]) / max(1, self._env.get_num_agents())
+
+            stats.steps_first_window.append(stats.utils_stats['steps_first_to_complete'] / self._max_steps)
+            stats.steps_last_window.append(stats.utils_stats['steps_last_to_complete'] / self._max_steps)
+            stats.exploration_window.append(stats.utils_stats['exploration'] / max(1,stats.utils_stats['action_count']))
+            stats.completion_window.append(stats.utils_stats['completion'])
             stats.score_window.append(stats.utils_stats['ep_score'] / (self._max_steps * max(1, self._env.get_num_agents())))
-            stats.min_steps_window.append(stats.utils_stats['min_steps_to_complete'] / self._max_steps)
-            stats.exploration_window.append(stats.utils_stats['exploration'] / step)
+            stats.act_timer_window.append(np.mean(stats.utils_stats['learn_time_steps']))
+            stats.learn_timer_window.append(np.mean(stats.utils_stats['act_time_steps']))
 
-            stats.utils_stats['smoothed_ep_score'] = stats.utils_stats['smoothed_ep_score'] * smoothing + stats.utils_stats['ep_score'] * (1.0 - smoothing)
-            stats.utils_stats['dones'] = np.sum([int(done[idx]) for idx in self._env.get_agent_handles()]) / max(1, self._env.get_num_agents())
-            stats.utils_stats['smoothed_dones'] = stats.utils_stats['smoothed_dones'] * smoothing + stats.utils_stats['dones'] * (1.0 - smoothing)
-
-#            stats.log_stats['score'] = stats.utils_stats['ep_score']
-            stats.log_stats['smoothed_score'] = stats.utils_stats['smoothed_ep_score']
+            stats.utils_stats['smoothed_score'] = stats.utils_stats['smoothed_score'] * smoothing + np.mean(stats.score_window) * (1.0 - smoothing)
+            stats.utils_stats['smoothed_completion'] = stats.utils_stats['smoothed_completion'] * smoothing + np.mean(stats.completion_window) * (1.0 - smoothing)
+        
+            stats.log_stats['smoothed_score'] = stats.utils_stats['smoothed_score']
             stats.log_stats['average_score'] = np.mean(stats.score_window)
-#            stats.log_stats['dones'] = stats.utils_stats['dones']
-            stats.log_stats['smoothed_dones'] = stats.utils_stats['smoothed_dones']
-            stats.log_stats['average_dones'] = np.mean(stats.completion_window)
-#            stats.log_stats['min_step_to_complete'] = np.mean(stats.min_steps_window)
-            stats.log_stats['average_min_step_to_complete'] = np.mean(stats.min_steps_window)
-            stats.log_stats['exploration'] = np.mean(stats.exploration_window)
-            stats.log_stats['learning_time'] = learn_timer.get()
-            stats.log_stats['acting_time'] = act_timer.get()
-            try :
-                stats.log_stats['mean_episode_loss'] = np.mean(stats.utils_stats['ep_losses'])
-                stats.log_stats['std_episode_loss'] = np.std(stats.utils_stats['ep_losses'])
-            except:
-                print('Never learned in this episode') 
+            stats.log_stats['smoothed_completion'] = stats.utils_stats['smoothed_completion']
+            stats.log_stats['average_completion'] = np.mean(stats.completion_window)
 
+            stats.log_stats['average_steps_first_to_complete'] = np.mean(stats.steps_first_window)
+            stats.log_stats['average_steps_last_to_complete'] = np.mean(stats.steps_last_window)
+            stats.log_stats['exploration'] = np.mean(stats.exploration_window)
+            stats.log_stats['smoothed_learning_time'] = np.mean(stats.learn_timer_window)
+            stats.log_stats['smoothed_acting_time'] = np.mean(stats.act_timer_window)
+            stats.log_stats['mean_episode_loss'] = np.mean(stats.utils_stats['ep_losses'])
+            stats.log_stats['std_episode_loss'] = np.std(stats.utils_stats['ep_losses'])
+            
             print(
                 '\r🚂 Training {} agents' 
                 '\t 🏁 Episode {}'
-                '\t 🏆 Smoothed Score: {:.3f}'
-                ' Average: {:.3f}'
-                '\t 💯 Smoothed Dones: {:.2f}'
-                ' Average: {:.2f}%'
-                '\t 🧭 Average N° steps: {:.2f}'
+                '\t 🏆 Score: {:.3f}'
+                ' Avg: {:.3f}'
+                '\t 💯 Completion: {:6.2f}%'
+                ' Avg: {:6.2f}%'
+                '\t 🧭 Avg N° steps: {:.2f}'
                 '\t 🎲 Decaying par: {:.3f}'.format(
                     self._env.get_num_agents(),
                     ep_id,
-                    stats.log_stats['smoothed_score'],
+                    stats.utils_stats['ep_score'],
                     stats.log_stats['average_score'],
-                    stats.log_stats['smoothed_dones'],
-                    stats.log_stats['average_dones']*100,
-                    stats.log_stats['average_min_step_to_complete'],
+                    stats.utils_stats['completion']*100,
+                    stats.log_stats['average_completion']*100,
+                    np.mean(stats.utils_stats['steps_first_to_complete'] / self._max_steps ,stats.utils_stats['steps_last_to_complete'] / self._max_steps),
                     stats.log_stats['decaying_par']
                 ))
 
@@ -258,17 +289,24 @@ class ExcHandler:
 
         if show : env_renderer = RenderTool(self._env)
 
+        #stats
+        scores = []
+        completions = []
+        nb_steps = []
+
         action_dict = dict()
 
         for _ in range(n_episodes):
             agent_obs = [None] * self._env.get_num_agents()
+
+            score = 0.0
 
             # Reset environment
             obs, info = self._env.reset(regenerate_rail=True, regenerate_schedule=True)
 
             if show : env_renderer.reset()
 
-            for _ in range(self._max_steps-1):
+            for step in range(self._max_steps-1):
                 for handle in self._env.get_agent_handles():
                     if obs[handle] :
                         agent_obs[handle] = self._obs_wrapper.normalize(obs[handle])
@@ -282,11 +320,29 @@ class ExcHandler:
                 # Environment step
                 obs, all_rewards, done, info = self._env.step(action_dict)
 
-                if show : env_renderer.render_env(show=True, show_observations=True, show_predictions=False)
+                for agent in self._env.get_agent_handles():
+                    score += all_rewards[agent]
+                
+                final_step = step
 
+                if show : env_renderer.render_env(show=True, show_observations=True, show_predictions=False)
 
                 if done['__all__']:
                     break
+            
+            normalized_score = score / (self._max_steps * self._env.get_num_agents())
+            scores.append(normalized_score)
+
+            tasks_finished = sum(done[idx] for idx in self._env.get_agent_handles())
+            completion = tasks_finished / max(1, self._env.get_num_agents())
+            completions.append(completion)
+
+            nb_steps.append(final_step)
         
         if show : env_renderer.close_window()
+
+        return scores, completions, nb_steps
+    
+
+
         

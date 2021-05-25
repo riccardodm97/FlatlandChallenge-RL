@@ -16,6 +16,10 @@ class Timer(object):
 
     def start(self):
         self.start_time = default_timer()
+    
+    def start_reset(self):
+        self.start_time = default_timer()
+        self.total_time = 0.0
 
     def end(self):
         self.total_time += default_timer() - self.start_time
