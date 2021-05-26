@@ -209,7 +209,7 @@ class ExcHandler:
             self._agent.on_episode_end()
 
             # Evaluate policy and log results at some interval
-            if (ep_id+1)  % 100 == 0 or ep_id == n_episodes-1 :
+            if ep_id  % 100 == 0 or ep_id == n_episodes-1 :
                 scores, completions, nb_steps_eval = self.eval_agent(10,False)
 
                 stats.log_stats["evaluation/scores_min"] = np.min(scores)
