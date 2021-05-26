@@ -161,7 +161,7 @@ class ExcHandler:
                     if info['action_required'][handle]:
                         update_values[handle] = True
                         act_timer.start_reset()
-                        action = self._agent.act(agent_obs[handle])
+                        action = self._agent.act(agent_obs[handle],False)
                         act_timer.end()
                         stats.utils_stats['act_time_steps'].append(act_timer.get())
                         stats.utils_stats['action_count']+=1
@@ -209,7 +209,7 @@ class ExcHandler:
             self._agent.on_episode_end()
 
             # Evaluate policy and log results at some interval
-            if ep_id % 100 == 0 or ep_id == n_episodes-1 :
+            if (ep_id+1)  % 100 == 0 or ep_id == n_episodes-1 :
                 scores, completions, nb_steps_eval = self.eval_agent(10,False)
 
                 stats.log_stats["evaluation/scores_min"] = np.min(scores)
@@ -314,7 +314,7 @@ class ExcHandler:
 
                     action = 0    
                     if info['action_required'][handle]:
-                        action = self._agent.act(agent_obs[handle])
+                        action = self._agent.act(agent_obs[handle],True)
 
                     action_dict.update({handle: action})
                     
@@ -341,6 +341,8 @@ class ExcHandler:
             nb_steps.append(final_step)
         
         if show : env_renderer.close_window()
+
+        print(" ✅ Eval: score {:.3f} done {:.1f}%".format(np.mean(scores), np.mean(completions) * 100.0))
 
         return scores, completions, nb_steps
     

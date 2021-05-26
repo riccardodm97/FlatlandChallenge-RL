@@ -5,16 +5,14 @@ from typing import Tuple
 
 class ActionSelector(ABC):
 
-    def __init__(self, parameters : dict, eval_mode : bool = False):
+    def __init__(self, parameters : dict):
 
         self._parameter_start = parameters['p_start']
         self._parameter_end = parameters['p_end']        
         self._parameter_decay = parameters['p_decay']
-
-        self.eval_mode = eval_mode
     
     @abstractmethod
-    def select_action(self, action_values) -> Tuple[int,bool]: pass
+    def select_action(self, action_values, eval_mode) -> Tuple[int,bool]: pass
 
     @abstractmethod
     def decay(self): pass
@@ -24,10 +22,10 @@ class ActionSelector(ABC):
 
 class RandomAS(ActionSelector):
 
-    def __init__(self, parameters, eval_mode):
-        super().__init__(parameters, eval_mode=eval_mode)
+    def __init__(self, parameters):
+        super().__init__(parameters)
     
-    def select_action(self, action_values) -> Tuple[int,bool]:
+    def select_action(self, action_values, eval_mode) -> Tuple[int,bool]:
         return np.random.choice(action_values.size), False
     
     def decay(self):
@@ -41,7 +39,7 @@ class GreedyAS(ActionSelector):
     def __init__(self, parameters):
         super().__init__(parameters)
     
-    def select_action(self, action_values) -> Tuple[int,bool]:
+    def select_action(self, action_values, eval_mode) -> Tuple[int,bool]:
         raise NotImplementedError  
     
     def decay(self):
@@ -52,13 +50,13 @@ class GreedyAS(ActionSelector):
 
 class EpsilonGreedyAS(ActionSelector):
 
-    def __init__(self, parameters, eval_mode):
-        super().__init__(parameters,eval_mode)
-        self._epsilon = self._parameter_start if self.eval_mode is False else 0.05
+    def __init__(self, parameters):
+        super().__init__(parameters)
+        self._epsilon = self._parameter_start 
     
-    def select_action(self, action_values) -> Tuple[int,bool]:
+    def select_action(self, action_values, eval_mode : bool) -> Tuple[int,bool]:
         max_action = np.argmax(action_values)    
-        if np.random.random() < self._epsilon :
+        if  not eval_mode and np.random.random() < self._epsilon :
             rnd_action = np.random.choice(action_values.size)
             return rnd_action, rnd_action==max_action
         else:
@@ -73,13 +71,13 @@ class EpsilonGreedyAS(ActionSelector):
 #TODO NON FUNZIONA CAPIRE PERCHE 
 class BoltzmannAS(ActionSelector):
 
-    def __init__(self, parameters, eval_mode):
-        super().__init__(parameters,eval_mode)
+    def __init__(self, parameters):
+        super().__init__(parameters)
         self._temperature = self._parameter_start
     
-    def select_action(self, action_values) -> Tuple[int,bool]:
+    def select_action(self, action_values, eval_mode) -> Tuple[int,bool]:
         max_action = np.argmax(action_values)
-        if self.eval_mode:
+        if eval_mode:
             return max_action, True
         
         val = action_values.copy()

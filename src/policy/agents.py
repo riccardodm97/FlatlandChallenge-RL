@@ -31,7 +31,7 @@ class Agent(ABC):
     def load_params(self): pass
 
     @abstractmethod
-    def act(self, obs) -> int: pass
+    def act(self, obs, eval_mode) -> int: pass
         
     @abstractmethod
     def step(self, obs, action, reward, next_obs, done): pass
@@ -56,7 +56,7 @@ class RndAgent(Agent):
 
     def load_params(self): pass 
 
-    def act(self, obs):
+    def act(self, obs, eval_mode):
         return np.random.choice(np.arange(self.action_size))        #TODO use RandomAS
 
     def step(self, obs, action, reward, next_obs, done): pass
@@ -89,7 +89,7 @@ class DQNAgent(Agent):
 
         #Instantiate action selector
         action_sel_class = getattr(action_sel_classes, self.agent_par['action_selection']['class'])
-        self.action_selector : ActionSelector = action_sel_class(self.agent_par['action_selection'], self.eval_mode) 
+        self.action_selector : ActionSelector = action_sel_class(self.agent_par['action_selection']) 
         if self.agent_par['action_selection']['noisy']:
             assert isinstance(self.action_selector, GreedyAS)    #if noisy is true the selector SHOULD be greedy
         
@@ -108,19 +108,19 @@ class DQNAgent(Agent):
          
 
     # TODO : RIMETTERE QUESTO MA EVITARE CHE DEBBA FARE PREDICT OGNI VOLTA 
-    # def act(self, obs) -> int : 
+    # def act(self, obs, eval_mode) -> int : 
     #     state = tf.expand_dims(obs, axis=0)
     #     values = self.qnetwork.predict(state)
-    #     action, is_best = self.action_selector.select_action(values)
+    #     action, is_best = self.action_selector.select_action(values, eval_mode)
 
     #     stats.utils_stats['exploration'] += 1-int(is_best)    #LOG
 
     #     return action 
     
-    def act(self, obs) -> int : 
+    def act(self, obs, eval_mode : bool) -> int : 
         state = tf.expand_dims(obs, axis=0)
 
-        if np.random.random() < self.action_selector.get_current_par_value(): 
+        if np.random.random() < self.action_selector.get_current_par_value() and not eval_mode: 
             stats.utils_stats['exploration'] += 1    #LOG
             return np.random.choice(self.action_size)
         else:
