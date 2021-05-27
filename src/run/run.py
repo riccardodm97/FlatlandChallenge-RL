@@ -9,8 +9,18 @@ from src.run.exec_handler import ExcHandler
 def run(episodes : int, par_agent : dict, par_environment : dict, mode : str, checkpoint_file, show : bool, project_path : str, tag : str):
 
     #check if it's running on gpu 
-    available_physical_devices = len(tf.config.list_physical_devices('GPU'))
-    print("GPUs Available:",'True, Num :'+str(available_physical_devices) if available_physical_devices>0 else 'False')
+    physical_devices = tf.config.list_physical_devices('GPU')
+    print("GPUs Available:",'True, Num :'+str(len(physical_devices)) if len(physical_devices)>0 else 'False')
+
+    try:
+        # Disable all GPUS
+        tf.config.set_visible_devices([], 'GPU')
+        visible_devices = tf.config.get_visible_devices()
+        for device in visible_devices:
+            assert device.device_type != 'GPU'
+    except:
+        # Invalid device or cannot modify virtual devices once initialized.
+        pass
 
     #in order to log the current branch from which we are logging to wandb
     repo = Repo(project_path)

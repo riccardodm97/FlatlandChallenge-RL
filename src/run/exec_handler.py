@@ -158,6 +158,7 @@ class ExcHandler:
 
             for step in range(self._max_steps-1):
                 for handle in self._env.get_agent_handles():
+                    [k for k,v in info['action_required'].items() if v is True]
                     if info['action_required'][handle]:
                         update_values[handle] = True
                         act_timer.start_reset()
@@ -238,8 +239,8 @@ class ExcHandler:
             stats.exploration_window.append(stats.utils_stats['exploration'] / max(1,stats.utils_stats['action_count']))
             stats.completion_window.append(stats.utils_stats['completion'])
             stats.score_window.append(stats.utils_stats['ep_score'] / (self._max_steps * max(1, self._env.get_num_agents())))
-            stats.act_timer_window.append(np.mean(stats.utils_stats['learn_time_steps']))
-            stats.learn_timer_window.append(np.mean(stats.utils_stats['act_time_steps']))
+            stats.learn_timer_window.append(np.mean(stats.utils_stats['learn_time_steps']))
+            stats.act_timer_window.append(np.mean(stats.utils_stats['act_time_steps']))
 
             stats.utils_stats['smoothed_score'] = stats.utils_stats['smoothed_score'] * smoothing + np.mean(stats.score_window) * (1.0 - smoothing)
             stats.utils_stats['smoothed_completion'] = stats.utils_stats['smoothed_completion'] * smoothing + np.mean(stats.completion_window) * (1.0 - smoothing)
