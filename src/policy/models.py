@@ -83,22 +83,21 @@ class DuelingQNetwork_beta(Model):
         # model = keras.models.Model(inputs=input, outputs=out)
 
         input = layers.Input(shape=(self.obs_size,))
-
-        
-        X_layer = layers.Dense(128, activation="relu")(input)
-        # action = layers.Dense(self._action_size, activation="linear")(X_layer) #TODO Parametrize layer sizes
-        X_layer = layers.Dense(1024, activation='relu', kernel_initializer='he_uniform')(X_layer)
-        X_layer = layers.Dense(512, activation='relu', kernel_initializer='he_uniform')(X_layer)
+        common_dense1 = layers.Dense(128, activation="relu")(input)
+        common_dense2 = layers.Dense(1024, activation='relu', kernel_initializer='he_uniform')(common_dense1)
+        common_dense3 = layers.Dense(512, activation='relu', kernel_initializer='he_uniform')(common_dense2)
 
         # value layer
-        V_layer = layers.Dense(1, activation='linear', name='V')(X_layer)  # V(S)
+        value = layers.Dense(1, activation='linear')(common_dense3)  
         # advantage layer
-        A_layer = layers.Dense(self.action_size, activation='linear', name='Ai')(X_layer)  # A(s,a)
-        A_layer = layers.Lambda(lambda a: a[:, :] - K.mean(a[:, :], keepdims=True), name='Ao')(A_layer)  # A(s,a)
-        # Q layer (V + A)
-        Q = layers.Add(name='Q')([V_layer, A_layer])  # Q(s,a)
-        Q_model = keras.models.Model(inputs=[input], outputs=[Q], name='qvalue')
-        return Q_model
+        advantage = layers.Dense(self.action_size, activation='linear')(common_dense3)  
+        advantage = layers.Lambda(lambda a: a[:, :] - K.mean(a[:, :], keepdims=True))(advantage)  
+
+        # out layer (Value + Advantage)
+        out = layers.Add()([value, advantage])  
+
+        model = keras.models.Model(inputs=[input], outputs=[out])
+        return model
 
 
     def get_compiled_model(self):
