@@ -69,20 +69,37 @@ class DuelingQNetwork_beta(Model):
 
     def get_model(self):
 
+        # input = layers.Input(shape=(self.obs_size,))
+        # common_dense1 = layers.Dense(128, activation="relu")(input)
+        # common_dense2 = layers.Dense(128, activation="relu")(common_dense1)
+        # value = layers.Dense(128, activation="relu")(common_dense2)
+        # value = layers.Dense(1, activation="relu")(value)
+        # advantage = layers.Dense(128, activation="relu")(common_dense2)
+        # advantage = layers.Dense(self.action_size, activation="relu")(advantage)
+        # advantage_mean = layers.Lambda(lambda x: K.mean(x, axis=1))(advantage)
+        # advantage = layers.Subtract()([advantage, advantage_mean])
+        # out = layers.Add()([value, advantage]) 
+
+        # model = keras.models.Model(inputs=input, outputs=out)
+
         input = layers.Input(shape=(self.obs_size,))
-        common_dense1 = layers.Dense(128, activation="relu")(input)
-        common_dense2 = layers.Dense(128, activation="relu")(common_dense1)
-        value = layers.Dense(128, activation="relu")(common_dense2)
-        value = layers.Dense(1, activation="relu")(value)
-        advantage = layers.Dense(128, activation="relu")(common_dense2)
-        advantage = layers.Dense(self.action_size, activation="relu")(advantage)
-        advantage_mean = layers.Lambda(lambda x: K.mean(x, axis=1))(advantage)
-        advantage = layers.Subtract()([advantage, advantage_mean])
-        out = layers.Add()([value, advantage]) 
 
-        model = keras.models.Model(inputs=input, outputs=out)
+        
+        X_layer = layers.Dense(128, activation="relu")(input)
+        # action = layers.Dense(self._action_size, activation="linear")(X_layer) #TODO Parametrize layer sizes
+        X_layer = layers.Dense(1024, activation='relu', kernel_initializer='he_uniform')(X_layer)
+        X_layer = layers.Dense(512, activation='relu', kernel_initializer='he_uniform')(X_layer)
 
-        return model
+        # value layer
+        V_layer = layers.Dense(1, activation='linear', name='V')(X_layer)  # V(S)
+        # advantage layer
+        A_layer = layers.Dense(self.action_size, activation='linear', name='Ai')(X_layer)  # A(s,a)
+        A_layer = layers.Lambda(lambda a: a[:, :] - K.mean(a[:, :], keepdims=True), name='Ao')(A_layer)  # A(s,a)
+        # Q layer (V + A)
+        Q = layers.Add(name='Q')([V_layer, A_layer])  # Q(s,a)
+        Q_model = keras.models.Model(inputs=[input], outputs=[Q], name='qvalue')
+        return Q_model
+
 
     def get_compiled_model(self):
         model = self.get_model()
