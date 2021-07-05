@@ -34,12 +34,12 @@ class NaiveQNetwork(Model):
         #     ])
 
         model = models.Sequential()
-        model.add(keras.Input(shape=(self.obs_size,)))
+        model.add(layers.InputLayer(input_shape=(self.obs_size,)))
         if self.noisy :
             model.add(tfa.layers.NoisyDense(128,activation='relu'))
         model.add(layers.Dense(128,activation='relu'))
         model.add(layers.Dense(128,activation='relu'))
-
+        model.add(layers.Dense(self.action_size))
         return model
     
     def get_compiled_model(self):
