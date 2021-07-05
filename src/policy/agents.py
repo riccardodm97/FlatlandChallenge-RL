@@ -104,7 +104,7 @@ class DQNAgent(Agent):
         #if double qNetwork instantiate target-model also 
         if self.agent_par['double']:
             model_class = getattr(model_classes,self.agent_par['model_class'])
-            self.qnetwork_target = model_class(self.obs_size,self.action_size,self.lr).get_model()
+            self.qnetwork_target = model_class(self.obs_size,self.action_size,self.lr,self.noisy).get_model()
             self.qnetwork_target.set_weights(self.qnetwork.get_weights())  
          
 
