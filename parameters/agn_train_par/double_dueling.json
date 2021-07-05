@@ -2,7 +2,7 @@
 
     "class": "DQNAgent",
     "double": true,
-    "model_class": "DuelingQNetwork_beta",
+    "model_class": "DuelingQNetwork_2",
     "action_selection":{
         "noisy": false,
         "class": "EpsilonGreedyAS",

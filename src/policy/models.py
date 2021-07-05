@@ -65,22 +65,9 @@ class DuelingQNetwork(Model):
         return model 
 
 
-class DuelingQNetwork_beta(Model):
+class DuelingQNetwork_2(Model):
 
     def get_model(self):
-
-        # input = layers.Input(shape=(self.obs_size,))
-        # common_dense1 = layers.Dense(128, activation="relu")(input)
-        # common_dense2 = layers.Dense(128, activation="relu")(common_dense1)
-        # value = layers.Dense(128, activation="relu")(common_dense2)
-        # value = layers.Dense(1, activation="relu")(value)
-        # advantage = layers.Dense(128, activation="relu")(common_dense2)
-        # advantage = layers.Dense(self.action_size, activation="relu")(advantage)
-        # advantage_mean = layers.Lambda(lambda x: K.mean(x, axis=1))(advantage)
-        # advantage = layers.Subtract()([advantage, advantage_mean])
-        # out = layers.Add()([value, advantage]) 
-
-        # model = keras.models.Model(inputs=input, outputs=out)
 
         input = layers.Input(shape=(self.obs_size,))
         common_dense1 = layers.Dense(128, activation="relu")(input)
