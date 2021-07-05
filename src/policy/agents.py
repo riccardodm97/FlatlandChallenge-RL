@@ -89,8 +89,9 @@ class DQNAgent(Agent):
 
         #Instantiate action selector
         action_sel_class = getattr(action_sel_classes, self.agent_par['action_selection']['class'])
-        self.action_selector : ActionSelector = action_sel_class(self.agent_par['action_selection']) 
-        if self.agent_par['action_selection']['noisy']:
+        self.action_selector : ActionSelector = action_sel_class(self.agent_par['action_selection'])
+        self.noisy = self.agent_par['action_selection']['noisy']
+        if self.noisy:
             assert isinstance(self.action_selector, GreedyAS)    #if noisy is true the selector SHOULD be greedy
         
         # Instatiate deep network model 
@@ -98,7 +99,7 @@ class DQNAgent(Agent):
             self.qnetwort = self.load(self.checkpoint)     
         else:
             model_class = getattr(model_classes,self.agent_par['model_class'])
-            self.qnetwork = model_class(self.obs_size,self.action_size,self.lr).get_compiled_model()
+            self.qnetwork = model_class(self.obs_size,self.action_size,self.lr,self.noisy).get_compiled_model()
             
         #if double qNetwork instantiate target-model also 
         if self.agent_par['double']:

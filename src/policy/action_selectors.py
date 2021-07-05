@@ -46,7 +46,7 @@ class GreedyAS(ActionSelector):
         pass         
     
     def get_current_par_value(self):
-        raise NotImplementedError     # return 0 ?? TODO check 
+        return 0.0                       # TODO check 
 
 class EpsilonGreedyAS(ActionSelector):
 
