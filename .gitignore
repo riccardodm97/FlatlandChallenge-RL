@@ -139,7 +139,7 @@ dmypy.json
 /wandb
 
 # LaTeX
-*/**.aux
-*/**.log
-*/**.synctex.gz
-*/**.toc
+*.aux
+*.log
+*.synctex.gz
+*.toc
