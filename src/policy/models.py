@@ -3,6 +3,7 @@ import tensorflow as tf
 import tensorflow.keras.backend as K
 from tensorflow import keras
 from tensorflow.keras import layers
+import tensorflow_probability as tfp
 
 
 class Model(ABC):
@@ -98,4 +99,28 @@ class NoisyQNetwork(Model):
 
     def get_model(self) -> tf.keras.models:
         return super().get_model()
-        
+
+
+class PPO(keras.Model):
+    def __init__(self, state_size, action_size):
+        super().__init__()
+        self.num_actions = action_size #(num_actions)
+        # self.inputx = keras.layers.Dense(state_size)
+        self.dense1 = keras.layers.Dense(64, activation='relu',
+                                         kernel_initializer=keras.initializers.he_normal())
+        self.dense2 = keras.layers.Dense(64, activation='relu',
+                                         kernel_initializer=keras.initializers.he_normal())
+        self.value = keras.layers.Dense(1)
+        self.policy_logits = keras.layers.Dense(action_size)
+
+    def call(self, inputs):
+        # x = self.inputx(inputs)
+        x = self.dense1(inputs)
+        x = self.dense2(x)
+        return self.value(x), self.policy_logits(x)
+
+    def action_value(self, state):
+        value, logits = self.predict_on_batch(state)
+        dist = tfp.distributions.Categorical(logits=logits)
+        action = dist.sample()
+        return action, value
