@@ -216,7 +216,6 @@ class PPOAgent(Agent):
         return action.numpy()[0]
 
     def step(self, obs, action, reward, next_obs, done, agent):
-        self._step_count += 1
 
         _, policy_logits = self.pponetwork(obs.reshape(1, -1))
 
