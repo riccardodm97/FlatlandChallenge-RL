@@ -210,7 +210,7 @@ class PPOAgent(Agent):
         else:
             self.pponetwork = model_classes.PPOModel(self.obs_size,self.action_size)
          
-    def act(self, obs):
+    def act(self, obs, eval_mode : bool ):
         action, value = self.pponetwork.action_value(obs.reshape(1, -1))
         self._last_value = value
         return action.numpy()[0]
