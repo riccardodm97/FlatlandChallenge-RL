@@ -263,7 +263,7 @@ class PPOAgent(Agent):
             discounted_rewards[t] = rewards[t] + 0.99 * discounted_rewards[t+1] * (1-dones[t])
         discounted_rewards = discounted_rewards[:-1]
         # advantages are bootstrapped discounted rewards - values, using Bellman's equation
-        advantages = discounted_rewards - np.stack(values)[:, 0] #values
+        advantages = discounted_rewards - values 
         # standardise advantages
         advantages -= np.mean(advantages)
         advantages /= (np.std(advantages) + 1e-10)
