@@ -107,14 +107,14 @@ class PPOModel(keras.Model):
         super().__init__()
         self.num_actions = action_size #(num_actions)
 
-        self.input = keras.layers.Dense(obs_size)
+        self.inputx = keras.layers.Dense(obs_size)
         self.dense1 = keras.layers.Dense(64, activation='relu', kernel_initializer=keras.initializers.he_normal())
         self.dense2 = keras.layers.Dense(64, activation='relu', kernel_initializer=keras.initializers.he_normal())
         self.value = keras.layers.Dense(1)
         self.policy_logits = keras.layers.Dense(action_size)
 
     def call(self, inputs):
-        x = self.input(inputs)
+        x = self.inputx(inputs)
         x = self.dense1(x)
         x = self.dense2(x)
         return self.value(x), self.policy_logits(x)
