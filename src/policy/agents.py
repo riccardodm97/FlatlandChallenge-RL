@@ -247,7 +247,9 @@ class PPOAgent(Agent):
                 ent_loss = self.entropy_loss(policy_logits, self.entropy_weight)
                 c_loss = self.critic_loss(discounted_rewards, values)
                 tot_loss = act_loss + ent_loss + c_loss
-                #TODO: INSERT STATISTIC FOR tot_loss
+                
+                #log loss
+                stats.utils_stats['ep_losses'].append(tot_loss)
 
             # Backpropagation
             grads = tape.gradient(tot_loss, self.pponetwork.trainable_variables)
@@ -303,7 +305,7 @@ class PPOAgent(Agent):
 
 
     def on_episode_start(self):
-        pass
+        stats.utils_stats['ep_losses'] = []
 
     def on_episode_end(self, agents):
         self.learn(agents)

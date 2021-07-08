@@ -237,7 +237,8 @@ class ExcHandler:
 
             stats.steps_first_window.append(stats.utils_stats['steps_first_to_complete'] / self._max_steps)
             stats.steps_last_window.append(stats.utils_stats['steps_last_to_complete'] / self._max_steps)
-            stats.exploration_window.append(stats.utils_stats['exploration'] / max(1,stats.utils_stats['action_count']))
+            if stats.utils_stats.get('exploration') is not None : 
+                stats.exploration_window.append(stats.utils_stats['exploration'] / max(1,stats.utils_stats['action_count']))
             stats.completion_window.append(stats.utils_stats['completion'])
             stats.score_window.append(stats.utils_stats['ep_score'] / (self._max_steps * max(1, self._env.get_num_agents())))
             stats.learn_timer_window.append(np.mean(stats.utils_stats['learn_time_steps']))
