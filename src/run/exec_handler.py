@@ -208,7 +208,7 @@ class ExcHandler:
                 if done['__all__']:
                     break
 
-            self._agent.on_episode_end()
+            self._agent.on_episode_end(self._env.get_agent_handles())
 
             # Evaluate policy and log results at some interval
             if ep_id  % 100 == 0 and ep_id!=0 or ep_id == n_episodes-1 :

@@ -41,7 +41,7 @@ class Agent(ABC):
     def on_episode_start(self): pass
 
     @abstractmethod
-    def on_episode_end(self): pass
+    def on_episode_end(self, agents): pass
     
     @abstractmethod
     def load(self,filename): pass 
@@ -64,7 +64,7 @@ class RndAgent(Agent):
 
     def on_episode_start(self): pass
 
-    def on_episode_end(self): pass
+    def on_episode_end(self, agents): pass
 
     def load(self, filename): pass
 
@@ -171,7 +171,7 @@ class DQNAgent(Agent):
         stats.utils_stats['ep_losses'] = []
         stats.utils_stats['exploration'] = 0
 
-    def on_episode_end(self):
+    def on_episode_end(self, agents):
         self.action_selector.decay()  
             
     def load(self,filename):
