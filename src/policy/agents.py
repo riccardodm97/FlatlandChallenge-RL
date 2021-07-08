@@ -35,7 +35,7 @@ class Agent(ABC):
     def act(self, obs, eval_mode) -> int: pass
         
     @abstractmethod
-    def step(self, obs, action, reward, next_obs, done): pass
+    def step(self, obs, action, reward, next_obs, done, agent): pass
 
     @abstractmethod
     def on_episode_start(self): pass
@@ -60,7 +60,7 @@ class RndAgent(Agent):
     def act(self, obs, eval_mode):
         return np.random.choice(np.arange(self.action_size))        #TODO use RandomAS
 
-    def step(self, obs, action, reward, next_obs, done): pass
+    def step(self, obs, action, reward, next_obs, done, agent): pass
 
     def on_episode_start(self): pass
 
@@ -128,7 +128,7 @@ class DQNAgent(Agent):
             return np.argmax(self.qnetwork.predict(state))
     
 
-    def step(self, obs, action, reward, next_obs, done):  
+    def step(self, obs, action, reward, next_obs, done, agent):  
         self.t_step +=1
 
         #store one step experience in replay buffer
