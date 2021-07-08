@@ -192,7 +192,6 @@ class PPOAgent(Agent):
     def load_params(self): 
         
         if not self.eval_mode :
-            self.sample_size = self.agent_par['sample_size']
             self.lr = self.agent_par['learning_rate']                 #0.5e-4
             
             #Instantiate bufferReplay object 
