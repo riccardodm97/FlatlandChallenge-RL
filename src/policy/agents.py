@@ -108,6 +108,9 @@ class DQNAgent(Agent):
             model_class = getattr(model_classes,self.agent_par['model_class'])
             self.qnetwork_target = model_class(self.obs_size,self.action_size,self.lr,self.noisy).get_model()
             self.qnetwork_target.set_weights(self.qnetwork.get_weights())  
+        
+        self.loss_func = keras.losses.Huber()
+        self.optimizer = keras.optimizers.Adam(learning_rate=self.lr)
          
 
     # TODO : RIMETTERE QUESTO MA EVITARE CHE DEBBA FARE PREDICT OGNI VOLTA 
@@ -141,7 +144,7 @@ class DQNAgent(Agent):
             self.learn()
 
     def learn(self):
-        state_sample, action_sample, reward_sample, next_state_sample, done_sample = self.memory.sample_memory(self.sample_size)
+        state_sample, action_sample, reward_sample, next_state_sample, done_sample, is_weights = self.memory.sample_memory(self.sample_size)
 
         batch_indexes = np.arange(self.sample_size)
 
@@ -154,8 +157,17 @@ class DQNAgent(Agent):
 
         q_targets[batch_indexes,action_sample] = reward_sample + ((1 - done_sample) * self.gamma * q_next_values)
 
-        history = self.qnetwork.fit(state_sample, q_targets, batch_size = 32, verbose = 0)    
 
+        with tf.GradientTape() as tape:
+
+            q_values = self.qnetwork(state_sample)
+
+            loss = self.loss_func(q_targets,q_values)
+            
+            #TODO: TROVARE IL MODO DI AVERE LA LOSS PER OGNI TRAINING ISTANCE CHE SERVE PER FARE L'UPDATE DEL PER  
+
+
+        history = self.qnetwork.fit(state_sample, q_targets, sample_weight = is_weights, batch_size = 32, verbose = 0)  
         stats.utils_stats['ep_losses'].append(history.history['loss'][0])
 
         if self.agent_par['double']:

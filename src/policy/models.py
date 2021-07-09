@@ -44,7 +44,7 @@ class NaiveQNetwork(CustomModel):
     
     def get_compiled_model(self):
         model = self.get_model()
-        model.compile(optimizer=keras.optimizers.Adam(learning_rate=self.lr), loss='mse')
+        model.compile(optimizer=keras.optimizers.Adam(learning_rate=self.lr), loss=keras.losses.Huber())
 
         return model 
 
@@ -69,7 +69,7 @@ class DuelingQNetwork(CustomModel):
 
     def get_compiled_model(self):
         model = self.get_model()
-        model.compile(optimizer=keras.optimizers.Adam(learning_rate=self.lr), loss='mse')
+        model.compile(optimizer=keras.optimizers.Adam(learning_rate=self.lr), loss=keras.losses.Huber())
 
         return model 
 
@@ -101,7 +101,7 @@ class DuelingQNetwork_2(CustomModel):
 
     def get_compiled_model(self):
         model = self.get_model()
-        model.compile(optimizer=keras.optimizers.Adam(learning_rate=self.lr), loss='mse')
+        model.compile(optimizer=keras.optimizers.Adam(learning_rate=self.lr), loss=keras.losses.Huber())
 
         return model 
 
