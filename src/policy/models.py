@@ -106,8 +106,5 @@ class DuelingQNetwork_2(Model):
         return model 
         
 
-class NoisyQNetwork(Model):
 
-    def get_model(self) -> tf.keras.models:
-        return super().get_model()
         
