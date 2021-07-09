@@ -108,8 +108,8 @@ class DuelingQNetwork_2(CustomModel):
 
 class PPOModel(keras.Model):
 
-    def init(self, obs_size, action_size):
-        super().init()
+    def __init__(self, obs_size, action_size):
+        super().__init__()
         self.num_actions = action_size #(num_actions)
 
         self.inputx = keras.layers.Dense(obs_size)

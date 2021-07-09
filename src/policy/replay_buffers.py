@@ -98,7 +98,7 @@ class ReplayBuffer_dq(ReplayBuffer):
 
 class PPOAgentBuffer:
 
-    def init(self):
+    def __init__(self):
         self.memory = {}
         self.stored = 0
 
@@ -116,8 +116,8 @@ class PPOAgentBuffer:
     def reset_mem(self):
         self.memory = {}
 
-    def len(self):
+    def __len__(self):
         return self.stored
 
-    def str(self):
+    def __str__(self):
         return 'PPOAgentBuffer'
