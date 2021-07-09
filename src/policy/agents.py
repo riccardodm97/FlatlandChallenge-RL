@@ -9,8 +9,10 @@ import src.policy.replay_buffers as buffer_classes
 import src.policy.models as model_classes
 import src.policy.action_selectors as action_sel_classes
 
-from src.policy.replay_buffers import ReplayBuffer
+from src.policy.replay_buffers import PPOAgentBuffer, ReplayBuffer
 from src.policy.action_selectors import ActionSelector,GreedyAS
+
+from tensorflow.keras.optimizers import Adam
 
 class Agent(ABC):
 
@@ -34,13 +36,13 @@ class Agent(ABC):
     def act(self, obs, eval_mode) -> int: pass
         
     @abstractmethod
-    def step(self, obs, action, reward, next_obs, done): pass
+    def step(self, obs, action, reward, next_obs, done, agent): pass
 
     @abstractmethod
     def on_episode_start(self): pass
 
     @abstractmethod
-    def on_episode_end(self): pass
+    def on_episode_end(self, agents): pass
     
     @abstractmethod
     def load(self,filename): pass 
@@ -59,11 +61,11 @@ class RndAgent(Agent):
     def act(self, obs, eval_mode):
         return np.random.choice(np.arange(self.action_size))        #TODO use RandomAS
 
-    def step(self, obs, action, reward, next_obs, done): pass
+    def step(self, obs, action, reward, next_obs, done, agent): pass
 
     def on_episode_start(self): pass
 
-    def on_episode_end(self): pass
+    def on_episode_end(self, agents): pass
 
     def load(self, filename): pass
 
@@ -128,7 +130,7 @@ class DQNAgent(Agent):
             return np.argmax(self.qnetwork.predict(state))
     
 
-    def step(self, obs, action, reward, next_obs, done):  
+    def step(self, obs, action, reward, next_obs, done, agent):  
         self.t_step +=1
 
         #store one step experience in replay buffer
@@ -171,7 +173,7 @@ class DQNAgent(Agent):
         stats.utils_stats['ep_losses'] = []
         stats.utils_stats['exploration'] = 0
 
-    def on_episode_end(self):
+    def on_episode_end(self, agents):
         self.action_selector.decay()  
             
     def load(self,filename):
@@ -186,3 +188,129 @@ class DQNAgent(Agent):
         return 'DQNAgent'
 
 
+class PPOAgent(Agent):
+
+    def load_params(self): 
+        
+        if not self.eval_mode :
+            self.lr = self.agent_par['learning_rate']                 #0.5e-4
+            
+            #Instantiate bufferReplay object 
+            self.memory : PPOAgentBuffer = PPOAgentBuffer()   
+
+        self.eps_clip = self.agent_par['surrogate_eps_clip'] 
+        self.loss_weight = self.agent_par['loss_weight'] 
+        self.entropy_weight= self.agent_par['entropy_weight'] 
+        self.entropy_decay = self.agent_par['entropy_decay'] 
+
+        self._optimizer = Adam(learning_rate=self.lr)
+
+        # Instatiate ppo model 
+        if self.checkpoint is not None :
+            self.pponetwork = self.load(self.checkpoint)     
+        else:
+            self.pponetwork = model_classes.PPOModel(self.obs_size,self.action_size)
+         
+    def act(self, obs, eval_mode : bool ):
+        action, value = self.pponetwork.action_value(obs.reshape(1, -1))
+        self._last_value = value
+        return action.numpy()[0]
+
+    def step(self, obs, action, reward, next_obs, done, agent):
+
+        _, policy_logits = self.pponetwork(obs.reshape(1, -1))
+
+        if self._last_value is None:
+            _, self._last_value = self.pponetwork.action_value(obs.reshape(1, -1))
+
+        self.memory.store_agent_experience(agent, action, self._last_value[0], obs, reward, done, policy_logits) 
+        self._last_value = None
+
+    def learn(self, agents):
+        self.entropy_weight = self.entropy_decay * self.entropy_weight
+        
+        for agent in agents:
+            actions, values, states, rewards, dones, probs = self.memory.get_agent_experience(agent) #TODO : DEBUG MODE SQUEEZE 
+            
+
+            _, next_value = self.pponetwork.action_value(states[-1].reshape(1, -1))
+            discounted_rewards, advantages = self.get_advantages(rewards, dones, values, next_value[0])
+
+            actions = tf.squeeze(tf.stack(actions))
+            probs = tf.nn.softmax(tf.squeeze(tf.stack(probs)))
+            action_inds = tf.stack([tf.range(0, actions.shape[0]), tf.cast(actions, tf.int32)], axis=1)
+            
+            old_probs = tf.gather_nd(probs, action_inds),
+
+            with tf.GradientTape() as tape:
+                values, policy_logits = self.pponetwork(tf.stack(states))
+                act_loss = self.actor_loss(advantages, old_probs, action_inds, policy_logits)
+                ent_loss = self.entropy_loss(policy_logits, self.entropy_weight)
+                c_loss = self.critic_loss(discounted_rewards, values)
+                tot_loss = act_loss + ent_loss + c_loss
+                
+                #log loss
+                stats.utils_stats['ep_losses'].append(tot_loss)
+
+            # Backpropagation
+            grads = tape.gradient(tot_loss, self.pponetwork.trainable_variables)
+            self._optimizer.apply_gradients(zip(grads, self.pponetwork.trainable_variables))
+           
+
+        self.memory.reset_mem() 
+
+    def get_advantages(self, rewards, dones, values, next_value):
+        discounted_rewards = np.array(rewards.tolist() + [next_value[0]])
+
+        for t in reversed(range(len(rewards))):
+            discounted_rewards[t] = rewards[t] + 0.99 * discounted_rewards[t+1] * (1-dones[t])
+        discounted_rewards = discounted_rewards[:-1]
+        # advantages are bootstrapped discounted rewards - values, using Bellman's equation
+        advantages = discounted_rewards - values 
+        # standardise advantages
+        advantages -= np.mean(advantages)
+        advantages /= (np.std(advantages) + 1e-10)
+        # standardise rewards too
+        discounted_rewards -= np.mean(discounted_rewards)
+        discounted_rewards /= (np.std(discounted_rewards) + 1e-8)
+        return discounted_rewards, advantages
+
+    def actor_loss(self, advantages, old_probs, action_inds, policy_logits):
+        probs = tf.nn.softmax(policy_logits)
+        new_probs = tf.gather_nd(probs, action_inds)
+
+        ratio = new_probs / old_probs
+
+        policy_loss = -tf.reduce_mean(tf.math.minimum(
+            ratio * advantages,
+            tf.clip_by_value(ratio, 1.0 - self.eps_clip, 1.0 + self.eps_clip) * advantages
+         ))
+        return policy_loss
+
+    def critic_loss(self, discounted_rewards, value_est):
+        return tf.cast(tf.reduce_mean(keras.losses.mean_squared_error(discounted_rewards, value_est)) * self.loss_weight,tf.float32)
+
+
+    def entropy_loss(self, policy_logits, ent_discount_val):
+        probs = tf.nn.softmax(policy_logits)
+        entropy_loss = -tf.reduce_mean(keras.losses.categorical_crossentropy(probs, probs))
+        return entropy_loss * ent_discount_val
+
+    def save(self,filename):
+        print('saving model to checkpoints/'+filename)
+        self.pponetwork.save('checkpoints/'+filename) 
+    
+    def load(self,filename):
+        print('loading model from checkpoints/'+filename)
+        return keras.models.load_model('checkpoints/'+filename)
+
+
+    def on_episode_start(self):
+        stats.utils_stats['ep_losses'] = []
+
+    def on_episode_end(self, agents):
+        self.learn(agents)
+
+
+    def __str__(self):
+        return "ppo"

@@ -4,9 +4,9 @@ import tensorflow.keras.backend as K
 from tensorflow import keras
 from tensorflow.keras import layers,models
 import tensorflow_addons as tfa
+import tensorflow_probability as tfp
 
-
-class Model(ABC):
+class CustomModel(ABC):
 
     def __init__(self, obs_size, action_size, lr, noisy):
 
@@ -21,7 +21,7 @@ class Model(ABC):
     @abstractmethod
     def get_compiled_model(self) -> tf.keras.models: pass
 
-class NaiveQNetwork(Model):
+class NaiveQNetwork(CustomModel):
 
     def get_model(self):
         
@@ -48,7 +48,7 @@ class NaiveQNetwork(Model):
 
         return model 
 
-class DuelingQNetwork(Model):
+class DuelingQNetwork(CustomModel):
 
     def get_model(self):
 
@@ -74,7 +74,7 @@ class DuelingQNetwork(Model):
         return model 
 
 
-class DuelingQNetwork_2(Model):
+class DuelingQNetwork_2(CustomModel):
 
     def get_model(self):
 
@@ -104,7 +104,32 @@ class DuelingQNetwork_2(Model):
         model.compile(optimizer=keras.optimizers.Adam(learning_rate=self.lr), loss='mse')
 
         return model 
-        
+
+
+class PPOModel(keras.Model):
+
+    def init(self, obs_size, action_size):
+        super().init()
+        self.num_actions = action_size #(num_actions)
+
+        self.inputx = keras.layers.Dense(obs_size)
+        self.dense1 = keras.layers.Dense(64, activation='relu', kernel_initializer=keras.initializers.he_normal())
+        self.dense2 = keras.layers.Dense(64, activation='relu', kernel_initializer=keras.initializers.he_normal())
+        self.value = keras.layers.Dense(1)
+        self.policy_logits = keras.layers.Dense(action_size)
+
+    def call(self, inputs):
+        x = self.inputx(inputs)
+        x = self.dense1(x)
+        x = self.dense2(x)
+        return self.value(x), self.policy_logits(x)
+
+    def action_value(self, obs):
+        value, logits = self.predict_on_batch(obs)
+        dist = tfp.distributions.Categorical(logits=logits)
+        action = dist.sample()
+        return action, value
+
 
 
         

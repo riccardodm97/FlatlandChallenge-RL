@@ -184,7 +184,8 @@ class ExcHandler:
                             action = agent_prev_action[handle],
                             reward = all_rewards[handle],
                             next_obs = agent_obs[handle],
-                            done = done[handle]
+                            done = done[handle],
+                            agent= handle
                         )
                         learn_timer.end()
                         stats.utils_stats['learn_time_steps'].append(learn_timer.get())
@@ -206,7 +207,7 @@ class ExcHandler:
                 if done['__all__']:
                     break
 
-            self._agent.on_episode_end()
+            self._agent.on_episode_end(self._env.get_agent_handles())
 
             # Evaluate policy and log results at some interval
             if ep_id  % 100 == 0 and ep_id!=0 or ep_id == n_episodes-1 :
@@ -235,7 +236,8 @@ class ExcHandler:
 
             stats.steps_first_window.append(stats.utils_stats['steps_first_to_complete'] / self._max_steps)
             stats.steps_last_window.append(stats.utils_stats['steps_last_to_complete'] / self._max_steps)
-            stats.exploration_window.append(stats.utils_stats['exploration'] / max(1,stats.utils_stats['action_count']))
+            if stats.utils_stats.get('exploration') is not None : 
+                stats.exploration_window.append(stats.utils_stats['exploration'] / max(1,stats.utils_stats['action_count']))
             stats.completion_window.append(stats.utils_stats['completion'])
             stats.score_window.append(stats.utils_stats['ep_score'] / (self._max_steps * max(1, self._env.get_num_agents())))
             stats.learn_timer_window.append(np.mean(stats.utils_stats['learn_time_steps']))
@@ -265,16 +267,14 @@ class ExcHandler:
                 ' Avg: {:.3f}'
                 '\t 💯 Completion: {:6.2f}%'
                 ' Avg: {:6.2f}%'
-                '\t 🧭 Avg N° steps: {:.2f}'
-                '\t 🎲 Decaying par: {:.3f}'.format(
+                '\t 🧭 Avg N° steps: {:.2f}'.format(
                     self._env.get_num_agents(),
                     ep_id,
                     stats.utils_stats['ep_score'],
                     stats.log_stats['average_score'],
                     stats.utils_stats['completion']*100,
                     stats.log_stats['average_completion']*100,
-                    np.mean([stats.utils_stats['steps_first_to_complete'] / self._max_steps, stats.utils_stats['steps_last_to_complete'] / self._max_steps]),
-                    stats.log_stats['decaying_par']
+                    np.mean([stats.utils_stats['steps_first_to_complete'] / self._max_steps, stats.utils_stats['steps_last_to_complete'] / self._max_steps])
                 ))
 
             stats.on_episode_end(ep_id)
