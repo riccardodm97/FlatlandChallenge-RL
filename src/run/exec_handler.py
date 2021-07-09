@@ -185,7 +185,7 @@ class ExcHandler:
                             reward = all_rewards[handle],
                             next_obs = agent_obs[handle],
                             done = done[handle],
-                            agent= handle
+                            agent = handle
                         )
                         learn_timer.end()
                         stats.utils_stats['learn_time_steps'].append(learn_timer.get())
