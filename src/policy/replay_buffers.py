@@ -94,3 +94,30 @@ class ReplayBuffer_dq(ReplayBuffer):
 
     def __str__(self):
         return 'ReplayBuffer_dq'
+
+
+class PPOAgentBuffer:
+
+    def __init__(self):
+        self.memory = {}
+        self.stored = 0
+
+
+    def store_agent_experience(self, agent_id, action, value, obs, reward, done, policy_logits):
+        experience = self.memory.get(agent_id, [])
+        experience.append([action, value, obs, reward, done, policy_logits])
+        self.memory[agent_id] = experience
+        self.stored +=1 
+
+    def get_agent_experience(self, agent_id):
+        action, value, obs, reward, done, policy_logits = [np.squeeze(i) for i in zip(*self.memory[agent_id])]
+        return action, value, obs, reward, done, policy_logits
+
+    def reset_mem(self):
+        self.memory = {}
+
+    def __len__(self):
+        return self.stored
+
+    def __str__(self):
+        return 'PPOAgentBuffer'
