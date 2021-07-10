@@ -12,7 +12,8 @@
         },
     "memory":{
         "class": "ReplayBuffer_np",
-        "mem_size": 100000
+        "mem_size": 100000,
+        "is_per": false
         },
     "sample_size": 128,
     "learn_every": 10,

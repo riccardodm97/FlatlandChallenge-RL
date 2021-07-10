@@ -88,6 +88,7 @@ class DQNAgent(Agent):
             #Instantiate bufferReplay object 
             buffer_class = getattr(buffer_classes, self.agent_par['memory']['class'])
             self.memory : ReplayBuffer = buffer_class(self.agent_par['memory']['mem_size'], self.obs_size) 
+            self.mem_is_PER = self.self.agent_par['memory']['is_per']
 
         #Instantiate action selector
         action_sel_class = getattr(action_sel_classes, self.agent_par['action_selection']['class'])
@@ -156,7 +157,7 @@ class DQNAgent(Agent):
         q_targets[sample_indexes,action_sample] = reward_sample + ((1 - done_sample) * self.gamma * q_next_values)
         target_new = np.array(q_targets)
         
-        if isinstance(self.memory,PrioritizedReplayBuffer):
+        if self.mem_is_PER:
             abs_errors = np.abs(target_old[sample_indexes,action_sample]-target_new[sample_indexes,action_sample])
             self.memory.buffer_update(abs_errors)
 

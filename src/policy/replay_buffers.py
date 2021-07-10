@@ -133,7 +133,6 @@ class PPOAgentBuffer:
     def __str__(self):
         return 'PPOAgentBuffer'
 
-    
 
 class PrioritizedReplayBuffer(ReplayBuffer):  
    
