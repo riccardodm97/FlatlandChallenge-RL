@@ -88,7 +88,7 @@ class DQNAgent(Agent):
             #Instantiate bufferReplay object 
             buffer_class = getattr(buffer_classes, self.agent_par['memory']['class'])
             self.memory : ReplayBuffer = buffer_class(self.agent_par['memory']['mem_size'], self.obs_size) 
-            self.mem_is_PER = self.self.agent_par['memory']['is_per']
+            self.mem_is_PER = self.agent_par['memory']['is_per']
 
         #Instantiate action selector
         action_sel_class = getattr(action_sel_classes, self.agent_par['action_selection']['class'])
