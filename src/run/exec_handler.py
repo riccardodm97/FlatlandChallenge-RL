@@ -121,6 +121,8 @@ class ExcHandler:
         update_values = [False] * self._env.get_num_agents()
         action_dict = dict()
 
+        eval_while_train = False                                   #TODO: DECIDERE 
+
         stats.utils_stats['smoothed_score'] = -1
         stats.utils_stats['smoothed_completion'] = 0.0
 
@@ -210,7 +212,7 @@ class ExcHandler:
             self._agent.on_episode_end(self._env.get_agent_handles())
 
             # Evaluate policy and log results at some interval
-            if ep_id  % 100 == 0 and ep_id!=0 or ep_id == n_episodes-1 :
+            if eval_while_train and ep_id  % 100 == 0 and ep_id!=0 or ep_id == n_episodes-1 :
                 scores, completions, nb_steps_eval = self.eval_agent(10,False)
 
                 stats.log_stats["evaluation/scores_min"] = np.min(scores)
