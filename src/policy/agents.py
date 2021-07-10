@@ -9,7 +9,7 @@ import src.policy.replay_buffers as buffer_classes
 import src.policy.models as model_classes
 import src.policy.action_selectors as action_sel_classes
 
-from src.policy.replay_buffers import PPOAgentBuffer, ReplayBuffer
+from src.policy.replay_buffers import PPOAgentBuffer, PrioritizedReplayBuffer, ReplayBuffer
 from src.policy.action_selectors import ActionSelector,GreedyAS
 
 from tensorflow.keras.optimizers import Adam
@@ -89,6 +89,8 @@ class DQNAgent(Agent):
             buffer_class = getattr(buffer_classes, self.agent_par['memory']['class'])
             self.memory : ReplayBuffer = buffer_class(self.agent_par['memory']['mem_size'], self.obs_size) 
             self.mem_is_PER = self.agent_par['memory']['is_per']
+            if self.mem_is_PER:
+                assert isinstance(self.memory,PrioritizedReplayBuffer)     #if mem_is_PER is true the buffer SHOULD be a PrioritizedExperienceReplay 
 
         #Instantiate action selector
         action_sel_class = getattr(action_sel_classes, self.agent_par['action_selection']['class'])
