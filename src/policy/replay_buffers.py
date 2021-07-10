@@ -116,7 +116,7 @@ class PPOAgentBuffer:
 
     def store_agent_experience(self, agent_id, action, value, obs, reward, done, policy_logits):
         experience = self.memory.get(agent_id, [])
-        experience.append([action, value, obs, reward, done, policy_logits])
+        experience.append([action, value, obs, reward, int(done), policy_logits])
         self.memory[agent_id] = experience
         self.stored +=1 
 
@@ -152,7 +152,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
     
     def store_experience(self,state,action,reward,new_state,done):
         
-        experience = state, action, reward, new_state, done
+        experience = state, action, reward, new_state, int(done)
 
         # Find the max priority
         max_priority = np.max(self.tree.tree[-self.tree.capacity:])
@@ -194,7 +194,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
             
             idxs.append(index)
             priorities.append(priority)
-            memory.append([data])
+            memory.append(data)
 
         
         sampling_probabilities = priorities / self.tree.total_priority
