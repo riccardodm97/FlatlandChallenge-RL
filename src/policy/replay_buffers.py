@@ -204,7 +204,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
 
         self.last_sample_idxs = idxs                      #TODO: fatto (?) salvare i b_idx perchè servono per il buffer update (non gli vengono passati li prende da dentro la classe) 
 
-        state_sample, action_sample, reward_sample, next_state_sample, done_sample =  zip(*memory)
+        state_sample, action_sample, reward_sample, next_state_sample, done_sample = [np.squeeze(i) for i in zip(*memory)]
 
         return state_sample, action_sample, reward_sample, next_state_sample, done_sample, isWeights
 
