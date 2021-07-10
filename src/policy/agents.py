@@ -9,7 +9,7 @@ import src.policy.replay_buffers as buffer_classes
 import src.policy.models as model_classes
 import src.policy.action_selectors as action_sel_classes
 
-from src.policy.replay_buffers import PPOAgentBuffer, ReplayBuffer
+from src.policy.replay_buffers import PPOAgentBuffer, PrioritizedReplayBuffer, ReplayBuffer
 from src.policy.action_selectors import ActionSelector,GreedyAS
 
 from tensorflow.keras.optimizers import Adam
@@ -108,9 +108,6 @@ class DQNAgent(Agent):
             model_class = getattr(model_classes,self.agent_par['model_class'])
             self.qnetwork_target = model_class(self.obs_size,self.action_size,self.lr,self.noisy).get_model()
             self.qnetwork_target.set_weights(self.qnetwork.get_weights())  
-        
-        self.loss_func = keras.losses.Huber()
-        self.optimizer = keras.optimizers.Adam(learning_rate=self.lr)
          
 
     # TODO : RIMETTERE QUESTO MA EVITARE CHE DEBBA FARE PREDICT OGNI VOLTA 
@@ -146,26 +143,22 @@ class DQNAgent(Agent):
     def learn(self):
         state_sample, action_sample, reward_sample, next_state_sample, done_sample, is_weights = self.memory.sample_memory(self.sample_size)
 
-        batch_indexes = np.arange(self.sample_size)
+        sample_indexes = np.arange(self.sample_size)
 
         q_targets = self.qnetwork.predict(state_sample)
+        target_old = np.array(q_targets)
 
         if self.agent_par['double']:
-            q_next_values = self.qnetwork_target.predict(next_state_sample)[batch_indexes, np.argmax(self.qnetwork.predict(next_state_sample), axis=1)]
+            q_next_values = self.qnetwork_target.predict(next_state_sample)[sample_indexes, np.argmax(self.qnetwork.predict(next_state_sample), axis=1)]
         else:
             q_next_values = np.max(self.qnetwork.predict(next_state_sample), axis=1)
 
-        q_targets[batch_indexes,action_sample] = reward_sample + ((1 - done_sample) * self.gamma * q_next_values)
-
-
-        with tf.GradientTape() as tape:
-
-            q_values = self.qnetwork(state_sample)
-
-            loss = self.loss_func(q_targets,q_values)
-            
-            #TODO: TROVARE IL MODO DI AVERE LA LOSS PER OGNI TRAINING ISTANCE CHE SERVE PER FARE L'UPDATE DEL PER  
-
+        q_targets[sample_indexes,action_sample] = reward_sample + ((1 - done_sample) * self.gamma * q_next_values)
+        target_new = np.array(q_targets)
+        
+        if isinstance(self.memory,PrioritizedReplayBuffer):
+            abs_errors = np.abs(target_old[sample_indexes,action_sample]-target_new[sample_indexes,action_sample])
+            self.memory.buffer_update(abs_errors)
 
         history = self.qnetwork.fit(state_sample, q_targets, sample_weight = is_weights, batch_size = 32, verbose = 0)  
         stats.utils_stats['ep_losses'].append(history.history['loss'][0])
@@ -205,7 +198,7 @@ class PPOAgent(Agent):
     def load_params(self): 
         
         if not self.eval_mode :
-            self.lr = self.agent_par['learning_rate']                 #0.5e-4
+            self.lr = self.agent_par['learning_rate']                 
             
             #Instantiate bufferReplay object 
             self.memory : PPOAgentBuffer = PPOAgentBuffer()   

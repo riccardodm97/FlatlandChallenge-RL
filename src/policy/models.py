@@ -25,6 +25,7 @@ class NaiveQNetwork(CustomModel):
 
     def get_model(self):
         
+        #TODO: eliminare 
         # model = models.Sequential([
         #             layers.Dense(128, input_shape=(self.obs_size,)),
         #             layers.Activation('relu'),
@@ -44,7 +45,7 @@ class NaiveQNetwork(CustomModel):
     
     def get_compiled_model(self):
         model = self.get_model()
-        model.compile(optimizer=keras.optimizers.Adam(learning_rate=self.lr), loss=keras.losses.Huber())
+        model.compile(optimizer=keras.optimizers.Adam(learning_rate=self.lr), loss='mse')
 
         return model 
 
@@ -69,7 +70,7 @@ class DuelingQNetwork(CustomModel):
 
     def get_compiled_model(self):
         model = self.get_model()
-        model.compile(optimizer=keras.optimizers.Adam(learning_rate=self.lr), loss=keras.losses.Huber())
+        model.compile(optimizer=keras.optimizers.Adam(learning_rate=self.lr), loss='mse')
 
         return model 
 
@@ -101,7 +102,7 @@ class DuelingQNetwork_2(CustomModel):
 
     def get_compiled_model(self):
         model = self.get_model()
-        model.compile(optimizer=keras.optimizers.Adam(learning_rate=self.lr), loss=keras.losses.Huber())
+        model.compile(optimizer=keras.optimizers.Adam(learning_rate=self.lr), loss='mse')
 
         return model 
 

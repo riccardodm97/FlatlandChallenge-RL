@@ -7,10 +7,9 @@ class SumTree(object):
     def __init__(self, capacity):
         
         self.capacity = capacity # Number of leaf nodes (final nodes) that contains experiences
-
         self.tree = np.zeros(2 * capacity - 1)
-
         self.data = np.zeros(capacity, dtype=object) # Contains the experiences (so the size of data is capacity)
+        self.n_entries = 0
 
 
     def add(self, priority, data):
@@ -21,13 +20,16 @@ class SumTree(object):
         self.data[self.data_pointer] = data
 
         # Update the leaf
-        self.update (tree_index, priority)
+        self.update(tree_index, priority)
 
         # Add 1 to data_pointer
         self.data_pointer += 1
 
         if self.data_pointer >= self.capacity:  # If we're above the capacity, you go back to first index (overwrite)
             self.data_pointer = 0
+
+        if self.n_entries < self.capacity:
+            self.n_entries += 1
 
 
     def update(self, tree_index, priority):

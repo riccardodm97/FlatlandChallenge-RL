@@ -23,7 +23,7 @@ class ReplayBuffer(ABC):
         pass
     
     @abstractmethod
-    def buffer_update(self,tree_idx,abs_errors):
+    def buffer_update(self,abs_errors):
         pass
 
     @abstractmethod
@@ -65,7 +65,7 @@ class ReplayBuffer_np(ReplayBuffer):
 
         return state_sample, action_sample, reward_sample, new_state_sample, done_sample, None
     
-    def buffer_update(self,tree_idx,abs_errors):
+    def buffer_update(self,abs_errors):
         pass
     
     def __str__(self):
@@ -95,7 +95,7 @@ class ReplayBuffer_dq(ReplayBuffer):
 
         return state_sample, action_sample, reward_sample, new_state_sample, done_sample, None
     
-    def buffer_update(self,tree_idx,abs_errors):
+    def buffer_update(self,abs_errors):
         pass
 
     def __v_stack_impr(self, states):
@@ -170,9 +170,9 @@ class PrioritizedReplayBuffer(ReplayBuffer):
 
     def sample_memory(self, sample_size):
         # Create a sample array that will contains the minibatch
-        memory_b = []
-
-        b_idx, b_ISWeights = np.empty((sample_size,), dtype=np.int32), np.empty((sample_size, 1), dtype=np.float32)
+        memory = []
+        idxs = []
+        priorities = []
 
         # Calculate the priority segment
         # Here, as explained in the paper, we divide the Range[0, ptotal] into n ranges
@@ -181,9 +181,10 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         # Here we increasing the PER_b each time we sample a new minibatch
         self.PER_b = np.min([1., self.PER_b + self.PER_b_increment_per_sampling])  # max = 1
 
-        # Calculating the max_weight
-        p_min = np.min(self.tree.tree[-self.tree.capacity:]) / self.tree.total_priority
-        max_weight = (p_min * sample_size) ** (-self.PER_b)
+        #TODO: TOGLIERE 
+        # # Calculating the max_weight
+        # p_min = np.min(self.tree.tree[-self.tree.capacity:]) / self.tree.total_priority
+        # max_weight = (p_min * sample_size) ** (-self.PER_b)
 
         for i in range(sample_size):
             
@@ -191,31 +192,30 @@ class PrioritizedReplayBuffer(ReplayBuffer):
             value = np.random.uniform(a, b)
 
             index, priority, data = self.tree.get_leaf(value)
+            
+            idxs.append(index)
+            priorities.append(priority)
+            memory.append([data])
 
-            #P(j)
-            sampling_probabilities = priority / self.tree.total_priority
+        
+        sampling_probabilities = priorities / self.tree.total_priority
 
-            #  IS = (1/N * 1/P(i))**b /max wi == (N*P(i))**-b  /max wi
-            b_ISWeights[i, 0] = np.power(sample_size * sampling_probabilities, -self.PER_b)/ max_weight
+        isWeights = np.power(self.tree.n_entries* sampling_probabilities, -self.PER_b)      #IS = (1/N * 1/P(i))**b /max wi == (N*P(i))**-b  /max wi
+        isWeights /= isWeights.max()
 
-            b_idx[i]= index
+        self.last_sample_idxs = idxs                      #TODO: fatto (?) salvare i b_idx perchè servono per il buffer update (non gli vengono passati li prende da dentro la classe) 
 
-            experience = [data]
+        state_sample, action_sample, reward_sample, next_state_sample, done_sample = [np.squeeze(i) for i in zip(*memory)]
 
-            memory_b.append(experience)
-
-        #TODO: salvare i b_idx perchè servono per il buffer update (non gli vengono passati li prende da dentro la classe) 
-
-        state_sample, action_sample, reward_sample, next_state_sample, done_sample = [np.squeeze(i) for i in zip(*memory_b)]
-
-        return state_sample, action_sample, reward_sample, next_state_sample, done_sample, b_ISWeights
+        return state_sample, action_sample, reward_sample, next_state_sample, done_sample, isWeights
 
     #Update the priorities on the tree
-    def buffer_update(self, tree_idx, abs_errors):
+    def buffer_update(self, abs_errors):
         abs_errors += self.PER_e  # convert to abs and avoid 0
         clipped_errors = np.minimum(abs_errors, self.absolute_error_upper)
         ps = np.power(clipped_errors, self.PER_a)
 
+        tree_idx = self.last_sample_idxs
         for ti, p in zip(tree_idx, ps):
             self.tree.update(ti, p)
     
