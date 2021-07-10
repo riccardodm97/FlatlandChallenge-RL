@@ -5,7 +5,7 @@ from collections.abc import Iterable
 import random
 import numpy as np 
 
-from utils.sumTree import SumTree
+from src.utils.sumTree import SumTree
 
 class ReplayBuffer(ABC):
 

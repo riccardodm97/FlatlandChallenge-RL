@@ -9,7 +9,7 @@ import src.policy.replay_buffers as buffer_classes
 import src.policy.models as model_classes
 import src.policy.action_selectors as action_sel_classes
 
-from src.policy.replay_buffers import PPOAgentBuffer, PrioritizedReplayBuffer, ReplayBuffer
+from src.policy.replay_buffers import PPOAgentBuffer, ReplayBuffer
 from src.policy.action_selectors import ActionSelector,GreedyAS
 
 from tensorflow.keras.optimizers import Adam
