@@ -8,6 +8,7 @@
 \usepackage{hyperref}
 \addbibresource{bib.bib}
 \usepackage{setspace}
+\usepackage{amsfonts}
 \usepackage[nottoc,numbib]{tocbibind}
 \usepackage{amsmath}
 \numberwithin{equation}{section}
@@ -43,7 +44,7 @@ In more detail, the goal consists in making a number of trains arrive at their d
 \begin{figure}[h]
 	\centering
 		\fbox{\includegraphics[width=\textwidth]{Images/Flatland_Example.png}}
-		\caption{A possible Flatland instance}
+		\caption{A possible Flatland instance.}
 \end{figure}
 
 \subsubsection{The environment}
@@ -55,7 +56,7 @@ Each cell in the Flatland grid can take the form of any of 8 tile types, as show
 \begin{figure}[h]
 	\centering
 		\fbox{\includegraphics[width=\textwidth]{Images/cell-types.png}}
-		\caption{The 8 cell types}
+		\caption{The 8 cell types.}
 	\label{fig:cell-types}
 \end{figure}
 
@@ -131,6 +132,13 @@ Learning using Deep Q-Networks (DQN) \cite{improvements} is a relatively new par
 	\item Dueling DQN.
 \end{itemize}
 
+\begin{figure}[h]
+	\centering
+		\fbox{\includegraphics[width=\textwidth]{Images/rainbow.png}}
+		\caption{Comparison of various DQN approaches, including the state-of-the-art Rainbow agent.}
+	\label{fig:rainbow}
+\end{figure}
+
 
 
 \subsubsection{Fixed Q-targets}
@@ -157,16 +165,28 @@ where $V\left(s\right)$ is the value of being in state $s$ and $A\left(s,a\right
 
 Of course, these three methods are not the only ones to deal with DQNs. A particularly exhaustive analysis of all the different improvements to the DQN algorithm is represented by the seminal work by Hessel et al. \cite{rainbow}: in the paper, different DQN approaches are compared, culminating in the creation of a state-of-the-art integrated ``Rainbow'' agent, exploiting all the advantages of the most successful approaches. These results are shown as a reference in Fig. \ref{fig:rainbow}.
 
-\begin{figure}[h]
-	\centering
-		\fbox{\includegraphics[width=\textwidth]{Images/rainbow.png}}
-		\caption{Comparison of various DQN approaches, including the state-of-the-art Rainbow agent}
-	\label{fig:rainbow}
-\end{figure}
+
 
 
 
 \subsection{Proximal Policy Optimization}
+Proximal Policy Optimization (PPO) \cite{ppo-algorithm}, \cite{understanding-ppo} is a technique designed to alternate between sampling data through interaction with the environment and optimizing an objective function using stochastic gradient ascent. The main feature of PPO is the use of the clipped surrogate objective:
+\begin{equation}
+	L^\mathrm{CLIP}\left(\theta\right)=\hat{\mathbb{E}}_t\left[\min\left(r_t\left(\theta\right)\hat{A}_t,\mathrm{clip}\left(r_t\left(\theta\right),1-\varepsilon,1+\varepsilon\right)\hat{A}_t\right)\right].
+\end{equation}
+
+Expectations are computed over a minimum of two terms: a normal objective and a clipped objective. Because of the $\min$ operator, the clipped objective behaves differently when the advantage estimate is positive or negative.
+
+\begin{figure}[h]
+	\centering
+		\fbox{\includegraphics[width=\textwidth]{Images/clipped.png}}
+		\caption{The $L^\mathrm{CLIP}$ function for positive advantages $A>0$ and negative advantages $A<0$. The red circles show the starting points for the optimization.}
+	\label{fig:clipped}
+\end{figure}
+
+The effect of clipping is shown in Fig. \ref{fig:clipped}. On the left situation, when the selected action has a better-than-expected effect, the loss function flattens out when the action is much more likely under the current policy compared to the old one. This is done to prevent overdoing an action update by taking a step too far. The same happens to the graph on the right: the loss function flattens out when the action is much less likely under the current policy.
+
+
 
 
 \subsection{Action Selectors}
@@ -187,7 +207,7 @@ The Greedy Approach is the most basic method of selecting an action. It consists
 \begin{figure}[h]
 	\centering
 		\fbox{\includegraphics[width=\textwidth]{Images/greedy.png}}
-		\caption{Action selection distribution for the Greedy Approach}
+		\caption{Action selection distribution for the Greedy Approach.}
 	\label{fig:greedy}
 \end{figure}
 
@@ -201,7 +221,7 @@ The Random Approach is the extreme opposite of the Greedy one: instead of always
 \begin{figure}[h]
 	\centering
 		\fbox{\includegraphics[width=\textwidth]{Images/random.png}}
-		\caption{Action selection distribution for the Random Approach}
+		\caption{Action selection distribution for the Random Approach.}
 	\label{fig:random}
 \end{figure}
 
@@ -215,7 +235,7 @@ The $\varepsilon$-Greedy Approach can be viewed as a combination of the Greedy a
 \begin{figure}[h]
 	\centering
 		\fbox{\includegraphics[width=\textwidth]{Images/epsilon.png}}
-		\caption{Action selection distribution for the $\varepsilon$-Greedy Approach}
+		\caption{Action selection distribution for the $\varepsilon$-Greedy Approach.}
 	\label{fig:epsilon}
 \end{figure}
 
@@ -230,7 +250,7 @@ The Boltzmann Approach takes the exploration-exploitation balance of $\varepsilo
 \begin{figure}[h]
 	\centering
 		\fbox{\includegraphics[width=\textwidth]{Images/boltzmann.png}}
-		\caption{Action selection distribution for the Boltzmann Approach}
+		\caption{Action selection distribution for the Boltzmann Approach.}
 	\label{fig:boltzmann}
 \end{figure}
 
@@ -258,6 +278,19 @@ where $\mu$ is a variable with random initialization, $\sigma$ is a variable wit
 \subsection{Experience Replay}
 
 \subsubsection{Prioritized Experience Replay}
+Prioritized Experience Replay \cite{prioritized-experience-replay} is a type of experience replay which consists in giving priority to transitions with high expected learning progress, measured by their temporal-difference error. This approach leads to two issues: firstly, the prioritization can produce a loss of diversity; secondly, it can introduce some bias.
+
+The diversity loss problem can be solved by employing stochastic prioritization, a sampling method which interpolates between pure greedy prioritization and uniform random sampling: on the one hand, it ensures a monotonic sampling probability in a transition's priority; on the other hand, even the lower-priority transitions are guaranteed a non-zero probability. Practically, the probability of sampling a transition $i$ is given by:
+\begin{equation}
+	P\left(i\right)=\frac{p_i^\alpha}{\sum_kp_k^\alpha},
+\end{equation}
+where $p_i$ is the priority of transition $i$ and $a$ is the amount of prioritization which is used.
+
+The introduction of a bias can be corrected by using importance-sampling weight, given by:
+\begin{equation}
+	w_i=\left(\frac{1}{N}\cdot\frac{1}{P\left(i\right)}\right)^\beta,
+\end{equation}
+which fully compensates for the non uniform probabilities if $\beta=1$. For stability reasons, weights are normalized by $\frac{1}{\max_iw_i}$, si that they only scale the update downwards.
 
 
 
