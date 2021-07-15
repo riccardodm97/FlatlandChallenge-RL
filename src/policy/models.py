@@ -25,6 +25,7 @@ class NaiveQNetwork(CustomModel):
 
     def get_model(self):
         
+        #TODO: eliminare 
         # model = models.Sequential([
         #             layers.Dense(128, input_shape=(self.obs_size,)),
         #             layers.Activation('relu'),
