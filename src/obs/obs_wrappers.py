@@ -4,7 +4,7 @@ import numpy as np
 
 from flatland.envs.observations import TreeObsForRailEnv
 from flatland.core.env_observation_builder import ObservationBuilder
-from src.obs.baseline_obs_utils import split_tree_into_feature_groups, norm_obs_clip
+from src.obs.obs_utils import split_tree_into_feature_groups, norm_obs_clip
 from flatland.envs.predictions import ShortestPathPredictorForRailEnv
 
 
