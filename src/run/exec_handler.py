@@ -68,7 +68,7 @@ class ExcHandler:
                         1./3.: 0.25,  # Slow commuter train
                         1./4.: 0.25}  # Slow freight train
 
-        #TODO add prediction_builder
+        #the prediction_builder is added to the Observation
         
         #setup the environment
         env = RailEnv(

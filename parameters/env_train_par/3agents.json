@@ -19,6 +19,7 @@
     "obs": {
         "class": "TreeObs",
         "tree_depth": 2,
-        "radius": 10
+        "radius": 10,
+        "predictor": true
     }
 }
