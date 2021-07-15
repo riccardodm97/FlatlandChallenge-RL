@@ -33,11 +33,9 @@
 \clearpage
 
 
-\section{Introduction}
+\section[Flatland Challenge]{Flatland Challenge \cite{flatland}}
 
-\subsection{Flatland Challenge}
-
-The aim of the challenge \cite{flatland}, is to achieve efficient management of railway traffic. In particular, this problem is tackled in a simple grid world environment, in order to simulate and experiment different scenarios.
+The aim of the challenge, is to achieve efficient management of railway traffic. In particular, this problem is tackled in a simple grid world environment, in order to simulate and experiment different scenarios.
 
 In more detail, the goal consists in making a number of trains arrive at their destinations minimizing the travel time. Even though for simple environments the train can follow explicit plans, as complexity increases the problem of mapping all possible states becomes intractable, for this reason a class of algorithms known as Reinforcement Learning (Section \ref{ch:reinforcement-learning}) can be exploited.
 
@@ -47,9 +45,9 @@ In more detail, the goal consists in making a number of trains arrive at their d
 		\caption{A possible Flatland instance.}
 \end{figure}
 
-\subsubsection{The environment}
+\subsection[The environment]{The environment \cite{flatland-challenge}}
 
-The Flatland environment \cite{flatland-challenge} consists in a discrete time simulation, meaning that each action is performed with a constant time step. At each step, an agent for each simulated train chooses an action. An agent is defined as ``an entity that can move within the grid and must solve tasks'' \cite{flatland-challenge}. More precisely, each agent can choose between two actions: waiting or moving in a direction. Each agent has an individual starting position and its goal is to reach its target destination. Of course, two agents can not occupy the same cell at the same time.
+The Flatland environment consists in a discrete time simulation, meaning that each action is performed with a constant time step. At each step, an agent for each simulated train chooses an action. An agent is defined as an entity that can move within the grid and must solve tasks. More precisely, each agent can choose between two actions: waiting or moving in a direction. Each agent has an individual starting position and its goal is to reach its target destination. Of course, two agents can not occupy the same cell at the same time.
 
 Each cell in the Flatland grid can take the form of any of 8 tile types, as shown in Fig. \ref{fig:cell-types}. More configurations can be obtained by rotating and mirroring the 8 basic tiles.
 
@@ -63,9 +61,111 @@ Each cell in the Flatland grid can take the form of any of 8 tile types, as show
 When the tile is of the straight type, the agent can only choose to continue moving or to stop. In presence of a simple or a double switch, the train is forced to decide in which of the offered direction to move. When arriving at a dead end, an agent can only stop or go backward.
 
 
-\subsection{Reinforcement Learning}\label{ch:reinforcement-learning}
+\subsection[Actions]{Actions \cite{actions-rewards}}
 
-The term Reinforcement Learning \cite{reinforcement-learning} refers to the class of agents which rely on feedbacks, or rewards, produced by the agents themselves when interacting with the environment. The way Reinforcement Learning works is to use observed rewards to learn the best possible policy for the given environment. In other words, the agent has no prior knowledge of the environment and must learn how to behave based only on posterior trial-and-error feedbacks.
+Since Flatland is a railway simulations, the agents' actions are naturally very limited. In particular, there are 5 basic actions:
+\begin{itemize}
+	\item \texttt{DO\_NOTHING}: if moving, the agent keeps moving, if stopped, it stays stopped;
+	\item \texttt{MOVE\_LEFT}: if the agent is at a switch with a leftward transition, it chooses the left path, otherwise it does nothing;
+	\item \texttt{MOVE\_FORWARD}: if the agent is at a switch with a straight transition, it goes straight, otherwise it does nothing;
+	\item \texttt{MOVE\_RIGHT}: if the agent is at a switch with a rightward transition, it chooses the right path, otherwise it does nothing;
+	\item \texttt{STOP\_MOVING}: the agent stops.
+\end{itemize}
+
+
+\subsection[Observations]{Observations \cite{observations}}
+
+The Flatland environment comes with 3 default observation: \texttt{Global}, \texttt{Local Grid}, and \texttt{Local Tree}. A graphical representation of the 3 observations is given in Fig. \ref{fig:observations}.
+
+\begin{figure}[h]
+	\centering
+		\fbox{\includegraphics[width=\textwidth]{Images/observations.png}}
+		\caption{The 3 default Flatland observations.}
+	\label{fig:observations}
+\end{figure}
+
+
+\subsubsection{Global Observation}
+
+The Global Observations returns the entire rail environment. In more details, it is composed of:
+\begin{itemize}
+	\item Transition map: provides a unique value for each type of transition map and its orientation;
+	\item Agent state: a 3D array containing:
+	\begin{itemize}
+		\item Channel 0: a one-hot encoding of the self agent's position and direction;
+		\item Channel 1: other agents' positions and directions;
+		\item Channel 2: self and other agents' malfunctions;
+		\item Channel 3: self and other agents' speeds;
+		\item Channel 4: the number of other agents ready to depart from that position;
+	\end{itemize}
+	\item Agent targets: a 3D array containing the position of the self agent target and the positions of the other agents' ones.
+\end{itemize}
+
+\subsubsection{Local Grid Observation}
+
+The Local Grid Observation returns the rail environment in a neighborhood of the agent. Its features are similar to that of the Global Observation, but the view field of the agent is limited. The main advantage over the Global Observation is that the Local Grid Observation reduces the amount of irrelevant information. In addition, it features a distance map, which gives information about the distance of each agent from its target.
+
+
+\subsubsection{Tree Observation}
+
+The Tree Observation exploits the graph structure of the railway. It generates a 4-branched tree starting from the agent's position, with each branch following an allowed transition, as shown in Fig. \ref{fig:tree}.
+
+\begin{figure}[h]
+	\centering
+		\fbox{\includegraphics[width=\textwidth]{Images/tree.png}}
+		\caption{The Flatland Tree Observation.}
+	\label{fig:tree}
+\end{figure}
+
+Each node is composed of 12 features:
+\begin{itemize}
+	\item Channel 0: if own target lies on the explored branch the current distance from the agent in number of cells is stored; 
+	\item Channel 1: if another agents target is detected the distance in number of cells from current agent position is stored;
+	\item Channel 2: if another agent is detected the distance in number of cells from current agent position is stored;
+	\item Channel 3: possible conflict detected;
+	\item Channel 4: if a not usable switch is detected the distance is stored;
+	\item Channel 5: distance to the next node;
+	\item Channel 6: minimum remaining travel distance from node to the agent’s target given the direction of the agent;
+	\item Channel 7: number of agents going in the same direction found on path to node;
+	\item Channel 8: number of agents going in the opposite direction found on path to node;
+	\item Channel 9: if an agent has a malfunctioning, the number of time steps the observed agent will remain blocked is stored;
+	\item Channel 10: slowest observed speed of an agent in same direction;
+	\item Channel 11: number of agents ready to depart but no yet active.
+\end{itemize}
+
+
+\subsection[Rewards]{Rewards \cite{actions-rewards}}
+
+At each time step, each agent receives combined local and global rewards. At a local level, a reward $r_l=-1$ is given to each agent until its target location is reached. After this happens, the agent will receive a constant reward of $r_l=0$. The global reward, on the other hand, by default starts at $r_g=0$ and turns to $r_g=1$ only after all agents have reached their targets. In total, the agent $i$ receives a reward:
+\begin{equation}
+	r_i\left(t\right)=r_l\left(t\right)+r_g\left(t\right).
+\end{equation}
+
+
+
+
+\subsection[Malfunctions]{Malfunctions \cite{malfunctions}}
+
+Malfunctions are introduced in the Flatland environment in order to simulate stochastic events. In real life, the initial scheduling plan often needs to be changed because of unexpected events such as delayed arrivals or various other malfunctions. The way malfunctions are implemented is by using a Poisson process to stop agents at random times for random durations.
+
+\subsection[Speed profiles]{Speed profiles \cite{speeds}}
+
+In a real railway, the difference in the various agents' speeds plays a huge role in increasing the complexity of the system. In Flatlands, this is simulated by using different speed profiles: a fastest speed is set to be $1$, and all trains can take fractional speed values between $0$ and $1$.
+
+
+
+
+
+
+
+
+
+
+
+
+\section[Reinforcement Learning]{Reinforcement Learning \cite{reinforcement-learning}}\label{ch:reinforcement-learning}
+
+The term Reinforcement Learning refers to the class of agents which rely on feedbacks, or rewards, produced by the agents themselves when interacting with the environment. The way Reinforcement Learning works is to use observed rewards to learn the best possible policy for the given environment. In other words, the agent has no prior knowledge of the environment and must learn how to behave based only on posterior trial-and-error feedbacks.
 
 There are three basic agent designs for Reinforcement Learning:
 \begin{itemize}
@@ -76,7 +176,7 @@ There are three basic agent designs for Reinforcement Learning:
 
 In addition to these designs, Reinforcement Learning can be either passive, meaning that the policy is fixed and the task is to learn the utilities of states, or active, referring to agents which must also learn how to act.
 
-\subsubsection{Q-learning}
+\subsection{Q-learning}
 
 For the Flatland Challenge, Q-learning is used. This class of algorithms learns an action-utility representation instead of simply learning the utilities. The value of an action-state tuple is typically indicated as $Q\left(s,a\right)$. There is a direct correlation between Q-values and state utilities, as expressed by the following equation:
 \begin{equation}
@@ -104,9 +204,9 @@ The only difference between Eqs. \eqref{eq:TD-Q-learning} and \eqref{eq:SARSA} i
 
 If the agent is a greedy one, always choosing the action with the best Q-value, there is no difference between the two algorithms. If, on the other hand, there is some exploration happening, there is a crucial difference: Q-learning is said to be an off-policy algorithm, because it does not care about the policy used; \textsc{Sarsa}, on the contrary, is considered on-policy. Even though Q-learning is more flexible, being able to learn well even with bad exploration policies, it is not as realistic, since it does not take into consideration possible external uncontrollable events.
 
-\subsubsection{Multi-Agent Reinforcement Learning}
+\subsection[Multi-Agent Reinforcement Learning]{Multi-Agent Reinforcement Learning \cite{multi-agent-rl}}
 
-Multi-Agent Reinforcement Learning (\textsc{Marl}) \cite{multi-agent-rl} refers to a version of Reinforcement Learning where multiple agents interact in a common environment. There are three main broad categories which classify \textsc{Marl}:
+Multi-Agent Reinforcement Learning (\textsc{Marl}) refers to a version of Reinforcement Learning where multiple agents interact in a common environment. There are three main broad categories which classify \textsc{Marl}:
 \begin{itemize}
 	\item Cooperative: when all agents have a common goal and work together;
 	\item Competitive: when agents compete to accomplish a goal;
@@ -123,22 +223,14 @@ Multi-Agent Reinforcement Learning (\textsc{Marl}) \cite{multi-agent-rl} refers 
 \subsubsection{Predictor}
 
 
-\subsection{Deep Q-Network Agent}
+\subsection[Deep Q-Network Agent]{Deep Q-Network Agent \cite{improvements}}
 
-Learning using Deep Q-Networks (DQN) \cite{improvements} is a relatively new paradigm, having been introduced in 2014. In general, the main feature of DQN algorithms is the exploitation of Deep Neural Networks to learn the Q-values of a problem. There are many versions of DQN algorithms, of which the most common are:
+Learning using Deep Q-Networks (DQN) is a relatively new paradigm, having been introduced in 2014. In general, the main feature of DQN algorithms is the exploitation of Deep Neural Networks to learn the Q-values of a problem. There are many versions of DQN algorithms, of which the most common are:
 \begin{itemize}
 	\item Fixed Q-targets;
 	\item Double DQN;
 	\item Dueling DQN.
 \end{itemize}
-
-\begin{figure}[h]
-	\centering
-		\fbox{\includegraphics[width=\textwidth]{Images/rainbow.png}}
-		\caption{Comparison of various DQN approaches, including the state-of-the-art Rainbow agent.}
-	\label{fig:rainbow}
-\end{figure}
-
 
 
 \subsubsection{Fixed Q-targets}
@@ -163,14 +255,19 @@ where $V\left(s\right)$ is the value of being in state $s$ and $A\left(s,a\right
 
 \subsubsection{Further DQN approaches}
 
-Of course, these three methods are not the only ones to deal with DQNs. A particularly exhaustive analysis of all the different improvements to the DQN algorithm is represented by the seminal work by Hessel et al. \cite{rainbow}: in the paper, different DQN approaches are compared, culminating in the creation of a state-of-the-art integrated ``Rainbow'' agent, exploiting all the advantages of the most successful approaches. These results are shown as a reference in Fig. \ref{fig:rainbow}.
+Of course, these three methods are not the only ones to deal with DQNs. A particularly exhaustive analysis of all the different improvements to the DQN algorithm is represented by the seminal work by Hessel et al. \cite{rainbow}: in the paper, different DQN approaches are compared, culminating in the creation of a state-of-the-art integrated ``Rainbow'' agent, exploiting all the advantages of the most successful approaches.% These results are shown as a reference in Fig. \ref{fig:rainbow}.
 
 
+%\begin{figure}[h]
+%	\centering
+%		\fbox{\includegraphics[width=\textwidth]{Images/rainbow.png}}
+%		\caption{Comparison of various DQN approaches, including the state-of-the-art Rainbow agent.}
+%	\label{fig:rainbow}
+%\end{figure}
 
 
-
-\subsection{Proximal Policy Optimization}
-Proximal Policy Optimization (PPO) \cite{ppo-algorithm}, \cite{understanding-ppo} is a technique designed to alternate between sampling data through interaction with the environment and optimizing an objective function using stochastic gradient ascent. The main feature of PPO is the use of the clipped surrogate objective:
+\subsection[Proximal Policy Optimization]{Proximal Policy Optimization \cite{ppo-algorithm}, \cite{understanding-ppo}}
+Proximal Policy Optimization (PPO) is a technique designed to alternate between sampling data through interaction with the environment and optimizing an objective function using stochastic gradient ascent. The main feature of PPO is the use of the clipped surrogate objective:
 \begin{equation}
 	L^\mathrm{CLIP}\left(\theta\right)=\hat{\mathbb{E}}_t\left[\min\left(r_t\left(\theta\right)\hat{A}_t,\mathrm{clip}\left(r_t\left(\theta\right),1-\varepsilon,1+\varepsilon\right)\hat{A}_t\right)\right].
 \end{equation}
@@ -189,8 +286,8 @@ The effect of clipping is shown in Fig. \ref{fig:clipped}. On the left situation
 
 
 
-\subsection{Action Selectors}
-In the learning process of a Reinforcement learning agent, exploration \cite{action-selectors} plays a crucial role: in order for an agent to properly learn from the interaction with the environment, it must be exposed to as many states as possible. Since an agent needs the right experiences to learn a good policy, but also needs a good policy to obtain the environment, a balance, known as exploration-exploitation tradeoff, needs to be reached. There are various action selection approaches which can be used by the agent, of which the main ones are:
+\subsection[Action Selectors]{Action Selectors \cite{action-selectors}}
+In the learning process of a Reinforcement learning agent, exploration plays a crucial role: in order for an agent to properly learn from the interaction with the environment, it must be exposed to as many states as possible. Since an agent needs the right experiences to learn a good policy, but also needs a good policy to obtain the environment, a balance, known as exploration-exploitation tradeoff, needs to be reached. There are various action selection approaches which can be used by the agent, of which the main ones are:
 \begin{itemize}
 	\item Greedy Approach;
 	\item Random Approach;
@@ -200,9 +297,23 @@ In the learning process of a Reinforcement learning agent, exploration \cite{act
 \end{itemize}
 
 
+\subsubsection{Random Approach}
+
+The Random Approach is the most basic method of selecting an action: the agent does not use any prior knowledge and picks randomly among all the possible actions. This approach is illustrated in Fig. \ref{fig:random}.
+
+\begin{figure}[h]
+	\centering
+		\fbox{\includegraphics[width=\textwidth]{Images/random.png}}
+		\caption{Action selection distribution for the Random Approach.}
+	\label{fig:random}
+\end{figure}
+
+Despite providing a lot of exploration, this approach is obviously deficient in exploiting the knowledge already learned by the agent.
+
+
 \subsubsection{Greedy Approach}
 
-The Greedy Approach is the most basic method of selecting an action. It consists in always opting for the action with the highest Q-value, regardless of the values of the other choices. This approach is illustrated in Fig. \ref{fig:greedy}.
+The Greedy Approach is the extreme opposite of the Random one: it consists in always opting for the action with the highest Q-value, regardless of the values of the other choices. This approach is illustrated in Fig. \ref{fig:greedy}.
 
 \begin{figure}[h]
 	\centering
@@ -214,18 +325,7 @@ The Greedy Approach is the most basic method of selecting an action. It consists
 At first, this approach might appear good, as the agent always opts for the action it thinks to be the best. The main shortcoming of this method is that it almost always provides a suboptimal solution, since no alternate solutions are explored. In other words, in Greedy Approach, exploitation is favored enormously over exploration, which is almost absent. 
 
 
-\subsubsection{Random Approach}
 
-The Random Approach is the extreme opposite of the Greedy one: instead of always checking for the best Q-value, the agent does not look at Q-values at all, picking randomly among all the possible actions. This approach is illustrated in Fig. \ref{fig:random}.
-
-\begin{figure}[h]
-	\centering
-		\fbox{\includegraphics[width=\textwidth]{Images/random.png}}
-		\caption{Action selection distribution for the Random Approach.}
-	\label{fig:random}
-\end{figure}
-
-Despite providing a lot of exploration, this approach is obviously deficient in exploiting the knowledge already learned by the agent.
 
 
 \subsubsection{$\varepsilon$-Greedy Approach}
@@ -266,25 +366,30 @@ The main problem of this approach is that it builds on the assumption that the p
 
 
 
-\subsubsection{Noisy Approach}
+\subsubsection[Noisy Approach]{Noisy Approach \cite{deep-reinforcement}}
 
-The Noisy Approach \cite{deep-reinforcement} is somewhat different from all the others: instead of acting on the probability of the agent choices, it adds some noise to the output of the Neural Network itself. In general, the weights $W_i$ are what the neural network needs to learn. Using the Noisy Approach, each weight can be expressed by the formula:
+The Noisy Approach is somewhat different from all the others: instead of acting on the probability of the agent choices, it adds some noise to the output of the Neural Network itself. In general, the weights $W_i$ are what the neural network needs to learn. Using the Noisy Approach, each weight can be expressed by the formula:
 \begin{equation}
 	W_i = \mu+\sigma\cdot\varepsilon
 \end{equation}
 where $\mu$ is a variable with random initialization, $\sigma$ is a variable with constant initialization, and $\varepsilon$ is the noise with a random value between $0$ and $1$.
 
 
-\subsection{Experience Replay}
+\subsection[Experience Replay]{Experience Replay \cite{experience-replay}}
 
-\subsubsection{Prioritized Experience Replay}
-Prioritized Experience Replay \cite{prioritized-experience-replay} is a type of experience replay which consists in giving priority to transitions with high expected learning progress, measured by their temporal-difference error. This approach leads to two issues: firstly, the prioritization can produce a loss of diversity; secondly, it can introduce some bias.
+In basic Q-learning algorithms, experiences are utilized just once and then thrown away. This is a waste, as some experiences may be rare and some may be costly. Therefore, experiences should be reused effectively. An experience is defined as a quadruple $\left(s,a,s',r\right)$, meaning that the execution of action $a$ in a state $s$ results in the state $s'$ with reward $r$.
+
+The most straightforward way to reuse experiences is the so-called Experience Replay, which consists in storing past experiences and then randomly sampling and presenting past experiences to the learning algorithm. This method results in a sped-up learning process, meaning that the networks usually converge more quickly.
+
+
+\subsubsection[Prioritized Experience Replay]{Prioritized Experience Replay \cite{prioritized-experience-replay}}
+Prioritized Experience Replay is a type of experience replay which consists in giving priority to transitions with high expected learning progress, measured by their temporal-difference error: in other words, precedence is given to those transitions whose expected rewards differ the most from the experienced ones. This approach leads to two issues: firstly, the prioritization can produce a loss of diversity; secondly, it can introduce some bias.
 
 The diversity loss problem can be solved by employing stochastic prioritization, a sampling method which interpolates between pure greedy prioritization and uniform random sampling: on the one hand, it ensures a monotonic sampling probability in a transition's priority; on the other hand, even the lower-priority transitions are guaranteed a non-zero probability. Practically, the probability of sampling a transition $i$ is given by:
 \begin{equation}
 	P\left(i\right)=\frac{p_i^\alpha}{\sum_kp_k^\alpha},
 \end{equation}
-where $p_i$ is the priority of transition $i$ and $a$ is the amount of prioritization which is used.
+where $p_i$ is the priority of transition $i$ and $\alpha$ is the amount of prioritization which is used.
 
 The introduction of a bias can be corrected by using importance-sampling weight, given by:
 \begin{equation}
