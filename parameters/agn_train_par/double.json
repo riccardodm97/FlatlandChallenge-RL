@@ -1,7 +1,7 @@
 {
 
     "class": "DQNAgent",
-    "double": false,
+    "double": true,
     "model_class": "NaiveQNetwork",
     "action_selection":{
         "noisy": false,
