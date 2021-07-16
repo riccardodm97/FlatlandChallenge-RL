@@ -33,7 +33,7 @@ class ExcHandler:
 
         # The action space of flatland is 5 discrete actions
         self._action_size = 5
-        self._obs_size = self._obs_wrapper.get_obs_dim()
+        self._obs_shape = self._obs_wrapper.get_obs_shape()
 
         # Instantiate agent 
         self._agent = self.handleAgent(self._agn_par)
@@ -41,7 +41,7 @@ class ExcHandler:
         #LOG
         wandb.config.max_steps = self._max_steps
         wandb.config.action_size = self._action_size
-        wandb.config.obs_size = self._obs_size
+        wandb.config.obs_shape = str(self._obs_shape)
 
 
 
@@ -95,7 +95,7 @@ class ExcHandler:
     
     def handleAgent(self, agn_par : dict) -> Agent:
         agent_class = getattr(agent_classes, agn_par['class'])
-        agent : Agent = agent_class(self._obs_size, self._action_size, agn_par, self._checkpoint, True if self._mode == 'eval' else False)
+        agent : Agent = agent_class(self._obs_shape, self._action_size, agn_par, self._checkpoint, True if self._mode == 'eval' else False)
 
         return agent
     
@@ -212,7 +212,7 @@ class ExcHandler:
             self._agent.on_episode_end(self._env.get_agent_handles())
 
             # Evaluate policy and log results at some interval
-            if eval_while_train and ep_id  % 100 == 0 and ep_id!=0 or ep_id == n_episodes-1 :
+            if eval_while_train and ((ep_id  % 100 == 0 and ep_id!=0) or ep_id == n_episodes-1) :
                 scores, completions, nb_steps_eval = self.eval_agent(10,False)
 
                 stats.log_stats["evaluation/scores_min"] = np.min(scores)

@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Tuple
 
 import numpy as np
 
@@ -17,7 +18,7 @@ class Observation(ABC):
         return self._builder
         
     @abstractmethod
-    def get_obs_dim(self): pass
+    def get_obs_shape(self) -> Tuple: pass
 
     @abstractmethod
     def normalize(self, observation): pass
@@ -31,13 +32,13 @@ class TreeObs(Observation):
             predictor = ShortestPathPredictorForRailEnv()
         self._builder = TreeObsForRailEnv(max_depth=self.parameters['tree_depth'],predictor=predictor)
 
-    def get_obs_dim(self):
+    def get_obs_shape(self):
         # Calculate the state size given the depth of the tree observation and the number of features
         n_features_per_node = self._builder.observation_dim
         n_nodes = 0
         for i in range(self.parameters['tree_depth'] + 1):
             n_nodes += np.power(4, i)
-        return n_features_per_node * n_nodes
+        return (n_features_per_node * n_nodes,)
 
     def normalize(self, observation):
 

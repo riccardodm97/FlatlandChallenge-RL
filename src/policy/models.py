@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
+
 import tensorflow as tf
+import numpy as np 
 import tensorflow.keras.backend as K
 from tensorflow import keras
 from tensorflow.keras import layers,models
@@ -8,9 +10,9 @@ import tensorflow_probability as tfp
 
 class CustomModel(ABC):
 
-    def __init__(self, obs_size, action_size, lr, noisy):
+    def __init__(self, obs_shape, action_size, lr, noisy):
 
-        self.obs_size = obs_size
+        self.obs_shape = obs_shape
         self.action_size = action_size
         self.lr = lr
         self.noisy = noisy
@@ -25,17 +27,10 @@ class NaiveQNetwork(CustomModel):
 
     def get_model(self):
         
-        #TODO: eliminare 
-        # model = models.Sequential([
-        #             layers.Dense(128, input_shape=(self.obs_size,)),
-        #             layers.Activation('relu'),
-        #             layers.Dense(128),
-        #             layers.Activation('relu'),
-        #             layers.Dense(self.action_size)
-        #     ])
+        obs_size = np.prod(self.obs_shape)
 
         model = models.Sequential()
-        model.add(layers.InputLayer(input_shape=(self.obs_size,)))
+        model.add(layers.InputLayer(input_shape=(obs_size,)))
         if self.noisy :
             model.add(tfa.layers.NoisyDense(128,activation='relu'))
         model.add(layers.Dense(128,activation='relu'))
@@ -53,7 +48,9 @@ class DuelingQNetwork(CustomModel):
 
     def get_model(self):
 
-        input = layers.Input(shape=(self.obs_size,))
+        obs_size = np.prod(self.obs_shape)
+
+        input = layers.Input(shape=(obs_size,))
         value = layers.Dense(128, activation="relu")(input)
         value = layers.Dense(128, activation="relu")(value)
         value = layers.Dense(1, activation="relu")(value)
@@ -78,8 +75,10 @@ class DuelingQNetwork(CustomModel):
 class DuelingQNetwork_2(CustomModel):
 
     def get_model(self):
+        
+        obs_size = np.prod(self.obs_shape)
 
-        input = layers.Input(shape=(self.obs_size,))
+        input = layers.Input(shape=(obs_size,))
         if self.noisy :
             common_dense1 = tfa.layers.NoisyDense(128, activation="relu")(input)
         else :
@@ -109,10 +108,10 @@ class DuelingQNetwork_2(CustomModel):
 
 class PPOModel(keras.Model):
 
-    def __init__(self, obs_size, action_size):
+    def __init__(self, obs_shape, action_size):
         super().__init__()
-        self.num_actions = action_size #(num_actions)
-
+        obs_size = np.prod(obs_shape)
+        
         self.inputx = keras.layers.Dense(obs_size)
         self.dense1 = keras.layers.Dense(64, activation='relu', kernel_initializer=keras.initializers.he_normal())
         self.dense2 = keras.layers.Dense(64, activation='relu', kernel_initializer=keras.initializers.he_normal())

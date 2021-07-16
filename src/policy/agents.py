@@ -16,9 +16,9 @@ from tensorflow.keras.optimizers import Adam
 
 class Agent(ABC):
 
-    def __init__(self, obs_size, action_size, agent_par, checkpoint_path, eval_mode = False):
+    def __init__(self, obs_shape, action_size, agent_par, checkpoint_path, eval_mode = False):
        
-        self.obs_size = obs_size
+        self.obs_shape = obs_shape
         self.action_size = action_size
         self.checkpoint = checkpoint_path
         self.eval_mode = eval_mode
@@ -87,7 +87,7 @@ class DQNAgent(Agent):
             
             #Instantiate bufferReplay object 
             buffer_class = getattr(buffer_classes, self.agent_par['memory']['class'])
-            self.memory : ReplayBuffer = buffer_class(self.agent_par['memory']['mem_size'], self.obs_size) 
+            self.memory : ReplayBuffer = buffer_class(self.agent_par['memory']['mem_size'], self.obs_shape) 
             self.mem_is_PER = self.agent_par['memory']['is_per']
             if self.mem_is_PER:
                 assert isinstance(self.memory,PrioritizedReplayBuffer)     #if mem_is_PER is true the buffer SHOULD be a PrioritizedExperienceReplay 
@@ -104,12 +104,12 @@ class DQNAgent(Agent):
             self.qnetwort = self.load(self.checkpoint)     
         else:
             model_class = getattr(model_classes,self.agent_par['model_class'])
-            self.qnetwork = model_class(self.obs_size,self.action_size,self.lr,self.noisy).get_compiled_model()
+            self.qnetwork = model_class(self.obs_shape,self.action_size,self.lr,self.noisy).get_compiled_model()
             
         #if double qNetwork instantiate target-model also 
         if self.agent_par['double']:
             model_class = getattr(model_classes,self.agent_par['model_class'])
-            self.qnetwork_target = model_class(self.obs_size,self.action_size,self.lr,self.noisy).get_model()
+            self.qnetwork_target = model_class(self.obs_shape,self.action_size,self.lr,self.noisy).get_model()
             self.qnetwork_target.set_weights(self.qnetwork.get_weights())  
          
 
@@ -217,7 +217,7 @@ class PPOAgent(Agent):
         if self.checkpoint is not None :
             self.pponetwork = self.load(self.checkpoint)     
         else:
-            self.pponetwork = model_classes.PPOModel(self.obs_size,self.action_size)
+            self.pponetwork = model_classes.PPOModel(self.obs_shape,self.action_size)
          
     def act(self, obs, eval_mode : bool ):
         action, value = self.pponetwork.action_value(obs.reshape(1, -1))

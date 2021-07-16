@@ -9,9 +9,9 @@ from src.utils.sumTree import SumTree
 
 class ReplayBuffer(ABC):
 
-    def __init__(self,mem_size,obs_size = None):
+    def __init__(self,mem_size,obs_shape = None):
         self.mem_size = mem_size
-        self.obs_size = obs_size
+        self.obs_size = np.prod(obs_shape)
         self.stored = 0
 
     @abstractmethod
@@ -36,13 +36,13 @@ class ReplayBuffer(ABC):
 
 class ReplayBuffer_np(ReplayBuffer):
 
-    def __init__(self, mem_size, obs_size):
-        super().__init__(mem_size,obs_size)
+    def __init__(self, mem_size, obs_shape):
+        super().__init__(mem_size,obs_shape)
 
-        self.state_memory = np.zeros((mem_size,obs_size))
+        self.state_memory = np.zeros((mem_size,self.obs_size))
         self.action_memory = np.zeros((mem_size),dtype=np.int8)
         self.reward_memory = np.zeros((mem_size))
-        self.new_state_memory = np.zeros((mem_size,obs_size))
+        self.new_state_memory = np.zeros((mem_size,self.obs_size))
         self.done_memory = np.zeros((mem_size),dtype=np.int8)
         
     
@@ -76,9 +76,9 @@ Experience = namedtuple("Experience", field_names=["state", "action", "reward", 
 
 class ReplayBuffer_dq(ReplayBuffer):
 
-    def __init__(self, mem_size, obs_size):
+    def __init__(self, mem_size, obs_shape):
         self.memory = deque(maxlen=mem_size)
-        super().__init__(mem_size,obs_size)
+        super().__init__(mem_size,obs_shape)
         
     def store_experience(self, state, action, reward, new_state, done):
         e = Experience(np.array(state), action, reward, np.array(new_state), int(done))
@@ -144,8 +144,8 @@ class PrioritizedReplayBuffer(ReplayBuffer):
 
     absolute_error_upper = 1.  # clipped abs error
 
-    def __init__(self, mem_size, obs_size):
-        super().__init__(mem_size,obs_size)
+    def __init__(self, mem_size, obs_shape):
+        super().__init__(mem_size,obs_shape)
 
         self.tree = SumTree(self.mem_size)
 
@@ -202,7 +202,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         isWeights = np.power(self.tree.n_entries* sampling_probabilities, -self.PER_b)      #IS = (1/N * 1/P(i))**b /max wi == (N*P(i))**-b  /max wi
         isWeights /= isWeights.max()
 
-        self.last_sample_idxs = idxs                      #TODO: fatto (?) salvare i b_idx perchè servono per il buffer update (non gli vengono passati li prende da dentro la classe) 
+        self.last_sample_idxs = idxs                      
 
         state_sample, action_sample, reward_sample, next_state_sample, done_sample = [np.squeeze(i) for i in zip(*memory)]
 
