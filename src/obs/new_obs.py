@@ -15,6 +15,7 @@ class DensityForRailEnv(ObservationBuilder):
         super().__init__()
         self._height = height
         self._width = width
+        self._depth = 1
         
         self._encode = lambda t: np.exp(-t / np.sqrt(max_t))
         
@@ -42,11 +43,12 @@ class DensityForRailEnv(ObservationBuilder):
         the agent and its target based on the distance to the agent, i.e. the number of time steps the
         agent needs to reach the cell, encoding the time information.
         """
-        density_map = np.zeros(shape=(self._height, self._width), dtype=np.float32)
+        density_map = np.zeros(shape=(self._height, self._width, self._depth), dtype=np.float32)
         if self._predictions[handle] is not None:
             for t, prediction in enumerate(self._predictions[handle]):
                 p = tuple(np.array(prediction[1:3]).astype(int))
-                density_map[p] = self._encode(t)
+                d = t if self._depth > 1 else 0
+                density_map[p][d] = self._encode(t)
         return density_map
 
     def set_env(self, env: Environment):
