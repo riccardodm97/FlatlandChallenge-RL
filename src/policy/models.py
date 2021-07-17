@@ -138,9 +138,9 @@ class DuelingCNN(CustomModel):
         reshaped_input = layers.Reshape(self.obs_shape)(input)
 
         #convolutional layers
-        conv1 = layers.Conv3D(32,3,padding='same',activation='relu')(reshaped_input)
-        conv2 = layers.Conv3D(64,3,padding='same',activation='relu')(conv1)
-        conv3 = layers.Conv3D(128,3,strides=(2,2),padding='same',activation='relu')(conv2)
+        conv1 = layers.Conv2D(32,3,padding='same',activation='relu')(reshaped_input)
+        conv2 = layers.Conv2D(64,3,padding='same',activation='relu')(conv1)
+        conv3 = layers.Conv2D(128,3,strides=(2,2),padding='same',activation='relu')(conv2)
 
         #dropout layer
         drop = layers.Dropout(0.5)(conv3)
