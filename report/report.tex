@@ -13,6 +13,8 @@
 \usepackage{amsmath}
 \numberwithin{equation}{section}
 
+\DeclareMathOperator*{\argmax}{arg\,max}
+
 \onehalfspacing
 
 \begin{document}
@@ -176,7 +178,7 @@ There are three basic agent designs for Reinforcement Learning:
 
 In addition to these designs, Reinforcement Learning can be either passive, meaning that the policy is fixed and the task is to learn the utilities of states, or active, referring to agents which must also learn how to act.
 
-\subsection{Q-learning}
+\subsection[Q-learning]{Q-learning \cite{dqn-tutorial}}
 
 For the Flatland Challenge, Q-learning is used. This class of algorithms learns an action-utility representation instead of simply learning the utilities. The value of an action-state tuple is typically indicated as $Q\left(s,a\right)$. There is a direct correlation between Q-values and state utilities, as expressed by the following equation:
 \begin{equation}
@@ -185,24 +187,35 @@ For the Flatland Challenge, Q-learning is used. This class of algorithms learns 
 
 The main difference between Q-functions and basic utility information si that no model of the form $P\left(s'|s,a\right)$ is needed, either for learning or for action selection. This characteristic makes Q-learning a model-free method.
 
-At equilibrium, when the Q-values are correct, the following equation must hold:
-\begin{equation}\label{eq:equilibrium}
-	Q\left(s,a\right)=R\left(s\right)+\gamma\sum_{s'}P\left(s'|s,a\right)\max_{a'}Q\left(s',a'\right).
+The basic Q-learning algorithm is composed of the following steps:
+\begin{enumerate}
+	\item Q-table initialization;
+	\item Action selection;
+	\item Q-table update.
+\end{enumerate}
+
+
+A Q-table is a data structure which is used to keep track of the visited state-action pairs and the corresponding expected Q-values. At the very beginning of the learning process, the Q-table is filled with zeros, which represent the agent's lack of knowledge about the environment.
+
+From here, the agent employs a trial-and-error strategy, choosing actions and balancing between exploration of new states and exploitation of previously collected knowledge. The way these actions are chosen depend on the so-called action selector, whose different types are explored in Section \ref{sec:action-selectors}.
+
+
+The third steps consists in updating the Q-table using the Bellman Equation:
+\begin{equation}\label{eq:bellman}
+	Q\left(s,a\right)\leftarrow \left(1-\alpha\right)Q\left(s,a\right)+\alpha\left(r+\lambda\max_{a'}Q\left(s',a'\right)\right),
+\end{equation}
+where $s$ is the current state, $a$ is the action taken, $r$ is the reward for the taken action, $\alpha$ is the learning rate parameter and $\lambda$ is the discount factor. The last $\max$ operation is performed on all actions $a'$ which can be taken from the updated state $s'$.
+
+
+A close alternative to standard Q-learning can be found in the \textsc{Sarsa} (State-Action-Reward-State-Action) algorithm. The concept is very close to that of Q-learning, but Eq. \eqref{eq:bellman} is replaced by:
+\begin{equation}\label{eq:sarsa}
+	Q\left(s,a\right)\leftarrow \left(1-\alpha\right)Q\left(s,a\right)+\alpha\left(r+\lambda Q\left(s',a'\right)\right).
 \end{equation}
 
-The issue with this approach is that the model of state transitions $P\left(s'|s,a\right)$ needs to be learned as well. To solve this problem, the so-called temporal-difference approach can be used. It consists in updating the Q-value every time an action is executed, using the following equation:
-\begin{equation}\label{eq:TD-Q-learning}
-	Q\left(s,a\right) \leftarrow Q\left(s,a\right) + \alpha\left(R\left(s\right)+\gamma\max_{a'}Q\left(s',a'\right)-Q\left(s,a\right)\right).
-\end{equation}
-
-A close alternative to Q-learning can be found in the \textsc{Sarsa} (State-Action-Reward-State-Action) algorithm. The concept is very close to that of Q-learning, but Eq. \eqref{eq:TD-Q-learning} is replaced by:
-\begin{equation}\label{eq:SARSA}
-	Q\left(s,a\right) \leftarrow Q\left(s,a\right) + \alpha\left(R\left(s\right)+\gamma Q\left(s',a'\right)-Q\left(s,a\right)\right).
-\end{equation}
-
-The only difference between Eqs. \eqref{eq:TD-Q-learning} and \eqref{eq:SARSA} is that $\max_{a'}Q\left(s',a'\right)$ is simply replaced by $Q\left(s',a'\right)$. In other words, instead of the maximum of the possible Q-values from the state reached in the transition, the actual value of the state $s'$ reached after taking action $a'$ is used. The value update takes place once at the end of each $s$, $a$, $r$, $s'$, $a'$ cycle, as suggested by the name.
+The only difference between Eqs. \eqref{eq:bellman} and \eqref{eq:sarsa} is that $\max_{a'}Q\left(s',a'\right)$ is simply replaced by $Q\left(s',a'\right)$. In other words, instead of the maximum of the possible Q-values from the state reached in the transition, the actual value of the state $s'$ reached after taking action $a'$ is used. The value update takes place once at the end of each $s$, $a$, $r$, $s'$, $a'$ cycle, as suggested by the name.
 
 If the agent is a greedy one, always choosing the action with the best Q-value, there is no difference between the two algorithms. If, on the other hand, there is some exploration happening, there is a crucial difference: Q-learning is said to be an off-policy algorithm, because it does not care about the policy used; \textsc{Sarsa}, on the contrary, is considered on-policy. Even though Q-learning is more flexible, being able to learn well even with bad exploration policies, it is not as realistic, since it does not take into consideration possible external uncontrollable events.
+
 
 \subsection[Multi-Agent Reinforcement Learning]{Multi-Agent Reinforcement Learning \cite{multi-agent-rl}}
 
@@ -218,32 +231,60 @@ Multi-Agent Reinforcement Learning (\textsc{Marl}) refers to a version of Reinfo
 \section{Implementation}
 
 
-\subsection{Observation}
 
-\subsubsection{Predictor}
-
-
-\subsection[Deep Q-Network Agent]{Deep Q-Network Agent \cite{improvements}}
+\subsection[Deep Q-Network Agent]{Deep Q-Network Agent \cite{dqn-tutorial, improvements}}
 
 Learning using Deep Q-Networks (DQN) is a relatively new paradigm, having been introduced in 2014. In general, the main feature of DQN algorithms is the exploitation of Deep Neural Networks to learn the Q-values of a problem. There are many versions of DQN algorithms, of which the most common are:
 \begin{itemize}
-	\item Fixed Q-targets;
+	\item Standard DQN;
 	\item Double DQN;
 	\item Dueling DQN.
 \end{itemize}
 
 
-\subsubsection{Fixed Q-targets}
+\subsubsection{Standard DQN}
 
-When Eq. \eqref{eq:equilibrium} is used in a Neural Network, the same parameters are used for estimating both the target and the Q-value. This is an issue, since it means that there is a big correlation between the target and the changing parameters: at every step, both the Q-values and the target values shift, leading to big oscillations in training.
+The basic DQN algorithm closely resembles the standard Q-learning one, consisting of:
+\begin{enumerate}
+	\item Neural network(s) initialization;
+	\item Action selection;
+	\item Network weights update.
+\end{enumerate}
 
-A possible solution is to use fixed Q-targets, meaning that a separate network is created with a fixed parameter for estimating the target. Every $\mathrm{T}$ steps, the parameters are copied from the DQN to update the target network. This way, learning becomes more stable because the target function stays fixed for some time.
+The main difference between DQN and standard Q-learning is the way the Q-table is implemented. Rather than mapping the state-action pair to a Q-value, the neural network maps input states to action-value pairs.
+
+Again, Eq. \eqref{eq:bellman} is used to update the neural networks. In particular, the change of weights is expressed by:
+\begin{equation}\label{eq:weights}
+	\Delta w = \alpha\left[\left(r+\lambda\max_a' Q\left(s',a',w\right)\right)-Q\left(s,a,w\right)\right]\nabla_wQ\left(s,a,w\right),
+\end{equation}
+where the part in the square brackets represent the temporal difference error and the last factor is the gradient of the current predicted Q-value.
+
+
+
+
 
 \subsubsection{Double DQN}
 
-An alternative to simple Fixed Q-targets is the so-called Double DQN. The aim of this approach is to tackle the problem of checking that the best action for the next state is the one with the highest Q-value. In general, the accuracy of Q-values depend on both the action chosen and what states have been explored. Therefore, at the beginning of the training there is no information about the best action to take: taking the maximum Q-value can lead to false positives. This natural tendency of DQN to given higher Q-values to suboptimal actions complicates learning.
+When Eq. \eqref{eq:bellman} is used in a Neural Network, the same parameters are used for estimating both the target and the Q-value. This is an issue, since it means that there is a big correlation between the target and the changing parameters: at every step, both the Q-values and the target values shift, leading to big oscillations in training.
 
-The Double DQN approach tries to fix this problem by using two separate networks to decouple the action selection from the target Q-value generation. First, the DQN network is used to select the best action to take for the next state, then the target network calculates the target Q-value of the state-action combination. So, the Double DQN method reduces Q-value overestimation and makes training faster and stabler.
+A possible solution is to use the so-called Double DQN. The aim of this approach is to tackle the problem of checking that the best action for the next state is the one with the highest Q-value. In general, the accuracy of Q-values depend on both the action chosen and what states have been explored. Therefore, at the beginning of the training there is no information about the best action to take: taking the maximum Q-value can lead to false positives. This natural tendency of DQN to given higher Q-values to suboptimal actions complicates learning.
+
+The Double DQN approach tries to fix this problem by using two separate networks to decouple the action selection from the target Q-value generation. First, the DQN network is used to select the best action to take for the next state, then the target network calculates the target Q-value of the state-action combination. So, the Double DQN method reduces Q-value overestimation and makes training faster and stabler. Practically, the time difference target $Q\left(s,a\right)$ becomes:
+\begin{equation}
+	Q\left(s,a\right)=r+\lambda Q\left(s',\argmax_{a'}Q\left(s',a'\right)\right).
+\end{equation}
+
+Then, every $\mathrm{T}$ steps the weights $w^-$ of the target network are updated with the DQN network ones $w$:
+\begin{equation}
+	w^-\leftarrow w.
+\end{equation}
+
+An alternative to this updating method of is given by the so-called soft update \cite{soft-update}. The term soft update refers to an approach which does not update the weights once every $T$ steps, but rather frequently and very little every time. In particular, new weights are given by:
+\begin{equation}
+	w^-=w\tau+w^-\left(1-\tau\right),
+\end{equation}
+where $\tau$ is an arbitrary (small) parameter.
+
 
 \subsubsection{Dueling DQN}
 
@@ -251,7 +292,16 @@ The third DQN version is based on decomposing the Q-value in two parts:
 \begin{equation}
 	Q\left(s,a\right)=V\left(s\right)+A\left(s,a\right)
 \end{equation}
-where $V\left(s\right)$ is the value of being in state $s$ and $A\left(s,a\right)$ is the advantage of taking action $a$ at state $s$. Dueling DQN focuses on separating the estimator of the two values, using one stream to estimate the state value $V\left(s\right)$ and another one to estimate the advantage of each action $A\left(s,a\right)$. Decoupling these two values becomes particularly useful for states where any action does not affect the environment in a relevant way.
+where $V\left(s\right)$ is the value of being in state $s$ and $A\left(s,a\right)$ is the advantage of taking action $a$ at state $s$. To be more precise, the actual equation used is:
+\begin{equation}
+	Q\left(s,a\right)=V\left(s\right)+A\left(s,a\right)-\frac{1}{\left|A\right|}\sum_aA\left(s,a\right),
+\end{equation}
+where the last term is a normalization factor.
+
+Dueling DQN focuses on separating the estimator of the two values, using one stream to estimate the state value $V\left(s\right)$ and another one to estimate the advantage of each action $A\left(s,a\right)$. Decoupling these two values becomes particularly useful for states where any action does not affect the environment in a relevant way.
+
+
+
 
 \subsubsection{Further DQN approaches}
 
@@ -266,27 +316,18 @@ Of course, these three methods are not the only ones to deal with DQNs. A partic
 %\end{figure}
 
 
-\subsection[Proximal Policy Optimization]{Proximal Policy Optimization \cite{ppo-algorithm}, \cite{understanding-ppo}}
-Proximal Policy Optimization (PPO) is a technique designed to alternate between sampling data through interaction with the environment and optimizing an objective function using stochastic gradient ascent. The main feature of PPO is the use of the clipped surrogate objective:
-\begin{equation}
-	L^\mathrm{CLIP}\left(\theta\right)=\hat{\mathbb{E}}_t\left[\min\left(r_t\left(\theta\right)\hat{A}_t,\mathrm{clip}\left(r_t\left(\theta\right),1-\varepsilon,1+\varepsilon\right)\hat{A}_t\right)\right].
-\end{equation}
-
-Expectations are computed over a minimum of two terms: a normal objective and a clipped objective. Because of the $\min$ operator, the clipped objective behaves differently when the advantage estimate is positive or negative.
-
-\begin{figure}[h]
-	\centering
-		\fbox{\includegraphics[width=\textwidth]{Images/clipped.png}}
-		\caption{The $L^\mathrm{CLIP}$ function for positive advantages $A>0$ and negative advantages $A<0$. The red circles show the starting points for the optimization.}
-	\label{fig:clipped}
-\end{figure}
-
-The effect of clipping is shown in Fig. \ref{fig:clipped}. On the left situation, when the selected action has a better-than-expected effect, the loss function flattens out when the action is much more likely under the current policy compared to the old one. This is done to prevent overdoing an action update by taking a step too far. The same happens to the graph on the right: the loss function flattens out when the action is much less likely under the current policy.
 
 
 
 
-\subsection[Action Selectors]{Action Selectors \cite{action-selectors}}
+
+
+
+
+
+
+
+\subsection[Action Selectors]{Action Selectors \cite{action-selectors}}\label{sec:action-selectors}
 In the learning process of a Reinforcement learning agent, exploration plays a crucial role: in order for an agent to properly learn from the interaction with the environment, it must be exposed to as many states as possible. Since an agent needs the right experiences to learn a good policy, but also needs a good policy to obtain the environment, a balance, known as exploration-exploitation tradeoff, needs to be reached. There are various action selection approaches which can be used by the agent, of which the main ones are:
 \begin{itemize}
 	\item Greedy Approach;
@@ -366,13 +407,36 @@ The main problem of this approach is that it builds on the assumption that the p
 
 
 
-\subsubsection[Noisy Approach]{Noisy Approach \cite{deep-reinforcement}}
+\subsubsection[Noisy Approach]{Noisy Approach \cite{deep-reinforcement, noisy}}
 
-The Noisy Approach is somewhat different from all the others: instead of acting on the probability of the agent choices, it adds some noise to the output of the Neural Network itself. In general, the weights $W_i$ are what the neural network needs to learn. Using the Noisy Approach, each weight can be expressed by the formula:
+The Noisy Approach is somewhat different from all the others: instead of acting on the probability of the agent choices, it adds some noise to the output of the Neural Network itself. In particular, the basic Noisy Approach consists in adding some gaussian node to the last layers of the network using the formula:
 \begin{equation}
-	W_i = \mu+\sigma\cdot\varepsilon
+	w_i = \mu+\sigma\cdot\varepsilon
 \end{equation}
 where $\mu$ is a variable with random initialization, $\sigma$ is a variable with constant initialization, and $\varepsilon$ is the noise with a random value between $0$ and $1$.
+
+There are two main ways of introducing noise to the Network: Independent Gaussian Noise and Factorized Gaussian Noise. Using the first method, every weight of the noisy layer is independent, with its own $\mu$ and $\sigma$. The Factorized version, on the other hand, uses two vectors: the first one has the same length as the input, the second one the same as the output. A special function is then applied to both vectors and a matrix multiplication between them is calculated and is then used to add weights.
+
+
+
+
+\subsection[Proximal Policy Optimization]{Proximal Policy Optimization \cite{ppo-algorithm, understanding-ppo}}
+Proximal Policy Optimization (PPO) is a technique designed to alternate between sampling data through interaction with the environment and optimizing an objective function using stochastic gradient ascent. The main feature of PPO is the use of the clipped surrogate objective:
+\begin{equation}
+	L^\mathrm{CLIP}\left(\theta\right)=\hat{\mathbb{E}}_t\left[\min\left(r_t\left(\theta\right)\hat{A}_t,\mathrm{clip}\left(r_t\left(\theta\right),1-\varepsilon,1+\varepsilon\right)\hat{A}_t\right)\right].
+\end{equation}
+
+Expectations are computed over a minimum of two terms: a normal objective and a clipped objective. Because of the $\min$ operator, the clipped objective behaves differently when the advantage estimate is positive or negative.
+
+\begin{figure}[h]
+	\centering
+		\fbox{\includegraphics[width=\textwidth]{Images/clipped.png}}
+		\caption{The $L^\mathrm{CLIP}$ function for positive advantages $A>0$ and negative advantages $A<0$. The red circles show the starting points for the optimization.}
+	\label{fig:clipped}
+\end{figure}
+
+The effect of clipping is shown in Fig. \ref{fig:clipped}. On the left situation, when the selected action has a better-than-expected effect, the loss function flattens out when the action is much more likely under the current policy compared to the old one. This is done to prevent overdoing an action update by taking a step too far. The same happens to the graph on the right: the loss function flattens out when the action is much less likely under the current policy.
+
 
 
 \subsection[Experience Replay]{Experience Replay \cite{experience-replay}}
@@ -397,6 +461,10 @@ The introduction of a bias can be corrected by using importance-sampling weight,
 \end{equation}
 which fully compensates for the non uniform probabilities if $\beta=1$. For stability reasons, weights are normalized by $\frac{1}{\max_iw_i}$, si that they only scale the update downwards.
 
+
+\subsection{Observation}
+
+\subsubsection{Predictor}
 
 
 \section{Results}
