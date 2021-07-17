@@ -46,6 +46,8 @@ class DensityForRailEnv(ObservationBuilder):
         density_map = np.zeros(shape=(self._height, self._width, self._depth), dtype=np.float32)
         if self._predictions[handle] is not None:
             for t, prediction in enumerate(self._predictions[handle]):
+                if np.isnan(prediction).any():
+                    break
                 p = tuple(np.array(prediction[1:3]).astype(int))
                 d = t if self._depth > 1 else 0
                 density_map[p][d] = self._encode(t)
