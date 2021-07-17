@@ -99,6 +99,10 @@ class ExcHandler:
         return obs_wrapper, env, max_steps
     
     def handleAgent(self, agn_par : dict) -> Agent:
+        if self._env_par['obs']['class'] == 'DensityObs' :
+            assert agn_par['model_class'] == 'DuelingCNN'
+
+
         agent_class = getattr(agent_classes, agn_par['class'])
         agent : Agent = agent_class(self._obs_shape, self._action_size, agn_par, self._checkpoint, True if self._mode == 'eval' else False)
 
