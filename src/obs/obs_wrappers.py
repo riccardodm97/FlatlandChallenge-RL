@@ -61,7 +61,7 @@ class DensityObs(Observation):
         self._h = self.parameters['height']
         self._w = self.parameters['width']
        
-        self._builder = DensityForRailEnv(height=self._h,weigth = self._w)
+        self._builder = DensityForRailEnv(height=self._h,width=self._w)
 
     def get_obs_shape(self):
         # Calculate the state size given the depth of the tree observation and the number of features
