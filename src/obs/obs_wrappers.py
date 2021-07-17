@@ -4,7 +4,7 @@ from typing import Tuple
 import numpy as np
 
 from src.obs.obs_utils import split_tree_into_feature_groups, norm_obs_clip
-from src.obs.new_obs import ProjectedDensityForRailEnv
+from src.obs.new_obs import DensityForRailEnv
 
 from flatland.envs.observations import TreeObsForRailEnv
 from flatland.core.env_observation_builder import ObservationBuilder
@@ -61,7 +61,7 @@ class DensityObs(Observation):
         self._h = self.parameters['height']
         self._w = self.parameters['width']
        
-        self._builder = ProjectedDensityForRailEnv(height=self._h,weigth = self._w)
+        self._builder = DensityForRailEnv(height=self._h,weigth = self._w)
 
     def get_obs_shape(self):
         # Calculate the state size given the depth of the tree observation and the number of features

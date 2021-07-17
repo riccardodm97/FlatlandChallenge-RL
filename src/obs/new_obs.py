@@ -9,7 +9,7 @@ from flatland.envs.predictions import ShortestPathPredictorForRailEnv
 from flatland.envs.rail_env import RailEnv
 
 
-class ProjectedDensityForRailEnv(ObservationBuilder):
+class DensityForRailEnv(ObservationBuilder):
 
     def __init__(self, height, width, max_t=10):
         super().__init__()
