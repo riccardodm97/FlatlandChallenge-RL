@@ -66,14 +66,14 @@ class DensityObs(Observation):
     def get_obs_shape(self):
         # Calculate the state size given the depth of the tree observation and the number of features
 
-        return (2,self._h,self._w)            #2 is depth 
+        return (self._h,self._w,2)           #2 is depth      #TODO: check correct order of dimensions
 
     def normalize(self, observation):
         
-        density_agent, density_others = observation[0],observation[1]           #get the two element in the list 
+        density_agent, density_others = observation[0],observation[1]             #get the two element in the list 
         
-        flat_d_a, flat_o = density_agent.flatten(), density_others.flatten()    #flatten each matrix to be stored in buffer replay
+        flat_d_a, flat_d_o = density_agent.flatten(), density_others.flatten()    #flatten each matrix to be stored in buffer replay
 
-        normalized_obs = np.concatenate((flat_d_a,flat_o))                      #concatenate two arrays (they will be reshaped after)
+        normalized_obs = np.concatenate((flat_d_a,flat_d_o))                      #concatenate two arrays (they will be reshaped after)
  
         return normalized_obs

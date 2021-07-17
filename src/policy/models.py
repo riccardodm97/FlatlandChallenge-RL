@@ -16,6 +16,8 @@ class CustomModel(ABC):
         self.action_size = action_size
         self.lr = lr
         self.noisy = noisy
+
+        self.obs_size = np.prod(self.obs_shape)
     
     @abstractmethod
     def get_model(self) -> tf.keras.models: pass
@@ -26,11 +28,9 @@ class CustomModel(ABC):
 class NaiveQNetwork(CustomModel):
 
     def get_model(self):
-        
-        obs_size = np.prod(self.obs_shape)
 
         model = models.Sequential()
-        model.add(layers.InputLayer(input_shape=(obs_size,)))
+        model.add(layers.InputLayer(input_shape=(self.obs_size,)))
         if self.noisy :
             model.add(tfa.layers.NoisyDense(128,activation='relu'))
         model.add(layers.Dense(128,activation='relu'))
@@ -48,9 +48,7 @@ class DuelingQNetwork(CustomModel):
 
     def get_model(self):
 
-        obs_size = np.prod(self.obs_shape)
-
-        input = layers.Input(shape=(obs_size,))
+        input = layers.Input(shape=(self.obs_size,))
         value = layers.Dense(128, activation="relu")(input)
         value = layers.Dense(128, activation="relu")(value)
         value = layers.Dense(1, activation="relu")(value)
@@ -76,9 +74,7 @@ class DuelingQNetwork_2(CustomModel):
 
     def get_model(self):
         
-        obs_size = np.prod(self.obs_shape)
-
-        input = layers.Input(shape=(obs_size,))
+        input = layers.Input(shape=(self.obs_size,))
         if self.noisy :
             common_dense1 = tfa.layers.NoisyDense(128, activation="relu")(input)
         else :
@@ -131,5 +127,50 @@ class PPOModel(keras.Model):
         return action, value
 
 
+class DuelingCNN(CustomModel):
 
+    def get_model(self):
         
+        #flattened array in input 
+        input = layers.Input(shape=(self.obs_size,))
+
+        #reshape as (height,width,depth)
+        reshaped_input = layers.Reshape(self.obs_shape)(input)
+
+        #convolutional layers
+        conv1 = layers.Conv3D(32,3,padding='same',activation='relu')(reshaped_input)
+        conv2 = layers.Conv3D(64,3,padding='same',activation='relu')(conv1)
+        conv3 = layers.Conv3D(128,3,strides=(2,2),padding='same',activation='relu')(conv2)
+
+        #dropout layer
+        drop = layers.Dropout(0.5)(conv3)
+
+        #flatten before dense aggregating layes
+        flatten = layers.Flatten()(drop)
+        
+        #dense layers 
+        common_dense1 = layers.Dense(128,activation='relu')(flatten)
+        common_dense2 = layers.Dense(512, activation='relu')(common_dense1)
+        common_dense3 = layers.Dense(256, activation='relu')(common_dense2)
+
+        # value layer
+        value = layers.Dense(1, activation='linear')(common_dense3)  
+
+        # advantage layer
+        advantage = layers.Dense(self.action_size, activation='linear')(common_dense3)  
+        advantage = layers.Lambda(lambda a: a[:, :] - K.mean(a[:, :], keepdims=True))(advantage)  
+
+        # out layer (Value + Advantage)
+        out = layers.Add()([value, advantage])  
+
+        model = models.Model(inputs=[input], outputs=[out])
+        return model
+
+
+    def get_compiled_model(self):
+        model = self.get_model()
+        model.compile(optimizer=keras.optimizers.Adam(learning_rate=self.lr), loss='mse')
+
+        return model 
+
+

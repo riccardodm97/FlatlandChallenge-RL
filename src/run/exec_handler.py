@@ -50,9 +50,16 @@ class ExcHandler:
         env_par : dict = environment_param['env']
         obs_par : dict = environment_param['obs']
 
-        # Instantiate observation 
+        #if densityObs, the observation shape should be the same as the env grid shape 
+        if obs_par['class'] == 'DensityObs':
+            assert env_par['x_dim'] == obs_par['width']
+            assert env_par['y_dim'] == obs_par['height']
+
+        #instantiate observation 
         obs_wrap_class = getattr(obs_wrap_classes, obs_par['class'])
         obs_wrapper : Observation  = obs_wrap_class(obs_par) 
+
+        #the prediction_builder is added to the Observation
 
         #init malfunction parameters
         malfunction = None
@@ -67,8 +74,6 @@ class ExcHandler:
                         1./2.: 0.25,  # Fast freight train
                         1./3.: 0.25,  # Slow commuter train
                         1./4.: 0.25}  # Slow freight train
-
-        #the prediction_builder is added to the Observation
         
         #setup the environment
         env = RailEnv(
