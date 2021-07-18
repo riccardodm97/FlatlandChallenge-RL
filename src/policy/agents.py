@@ -177,7 +177,7 @@ class DQNAgent(Agent):
 
     
     def on_episode_start(self):
-        stats.log_stats['decaying_par'] = self.action_selector.get_current_par_value()    #TODO remove from here and put somewhere else; here it's not always the case that epsilon is present
+        stats.log_stats['decaying_par'] = self.action_selector.get_current_par_value()    
         stats.utils_stats['ep_losses'] = []
         stats.utils_stats['exploration'] = 0
 
@@ -237,7 +237,7 @@ class PPOAgent(Agent):
     def learn(self, agents):
         
         for agent in agents:
-            actions, values, states, rewards, dones, probs = self.memory.get_agent_experience(agent) #TODO : DEBUG MODE SQUEEZE 
+            actions, values, states, rewards, dones, probs = self.memory.get_agent_experience(agent) 
             
 
             _, next_value = self.pponetwork.action_value(states[-1].reshape(1, -1))
