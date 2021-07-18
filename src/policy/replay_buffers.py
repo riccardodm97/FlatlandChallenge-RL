@@ -138,7 +138,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
    
     PER_e = 0.01  # Hyperparameter that we use to avoid some experiences to have 0 probability of being taken
     PER_a = 0.6  # Hyperparameter that we use to make a tradeoff between taking only exp with high priority and sampling randomly
-    PER_b = 0.4  # importance-sampling, from initial value increasing to 1
+    PER_b = 0.4  # Importance-sampling, from initial value increasing to 1
 
     PER_b_increment_per_sampling = 0.001
 
@@ -173,17 +173,13 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         idxs = []
         priorities = []
 
-        # Calculate the priority segment
+        # Compute the priority segment
         # Here, as explained in the paper, we divide the Range[0, ptotal] into n ranges
         priority_segment = self.tree.total_priority / sample_size       # priority segment
 
         # Here we increasing the PER_b each time we sample a new minibatch
         self.PER_b = np.min([1., self.PER_b + self.PER_b_increment_per_sampling])  # max = 1
 
-        #TODO: TOGLIERE 
-        # # Calculating the max_weight
-        # p_min = np.min(self.tree.tree[-self.tree.capacity:]) / self.tree.total_priority
-        # max_weight = (p_min * sample_size) ** (-self.PER_b)
 
         for i in range(sample_size):
             
@@ -199,7 +195,7 @@ class PrioritizedReplayBuffer(ReplayBuffer):
         
         sampling_probabilities = priorities / self.tree.total_priority
 
-        isWeights = np.power(self.tree.n_entries* sampling_probabilities, -self.PER_b)      #IS = (1/N * 1/P(i))**b /max wi == (N*P(i))**-b  /max wi
+        isWeights = np.power(self.tree.n_entries* sampling_probabilities, -self.PER_b)      #IsWeights = (1/N * 1/P(i))**b /max wi == (N*P(i))**-b  /max wi
         isWeights /= isWeights.max()
 
         self.last_sample_idxs = idxs                      

@@ -2,7 +2,7 @@ import json
 from argparse import ArgumentParser
 import os
 
-from src.handlers.run import run
+from src.run.run import run
 
 
 def eval_main(episodes : int, parameter_file, mode : str, checkpoint_file, show : bool, tag): 

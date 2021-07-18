@@ -76,7 +76,7 @@ class DuelingQNetwork_2(CustomModel):
         
         input = layers.Input(shape=(self.obs_size,))
         if self.noisy :
-            common_dense1 = tfa.layers.NoisyDense(128, activation="relu")(input)
+            common_dense1 = tfa.layers.NoisyDense(128, activation="relu")(input)                         #noisy layer 
         else :
             common_dense1 = layers.Dense(128, activation="relu")(input)
         common_dense2 = layers.Dense(1024, activation='relu', kernel_initializer='he_uniform')(common_dense1)

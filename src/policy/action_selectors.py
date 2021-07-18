@@ -46,7 +46,8 @@ class GreedyAS(ActionSelector):
         pass         
     
     def get_current_par_value(self):
-        return 0.0                       # TODO check 
+        return 0.0                       
+
 
 class EpsilonGreedyAS(ActionSelector):
 
@@ -68,7 +69,7 @@ class EpsilonGreedyAS(ActionSelector):
     def get_current_par_value(self):
         return self._epsilon
 
-#TODO NON FUNZIONA CAPIRE PERCHE 
+
 class BoltzmannAS(ActionSelector):
 
     def __init__(self, parameters):

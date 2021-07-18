@@ -1,5 +1,7 @@
 import numpy as np
 
+
+# Smart way of storing data with weights for each experience 
 class SumTree(object):
     
     data_pointer = 0
@@ -33,7 +35,7 @@ class SumTree(object):
 
 
     def update(self, tree_index, priority):
-        # Change = new priority score - former priority score
+        # change = new priority score - former priority score
         change = priority - self.tree[tree_index]
         self.tree[tree_index] = priority
 
@@ -52,7 +54,7 @@ class SumTree(object):
             left_child_index = 2 * parent_index + 1
             right_child_index = left_child_index + 1
 
-            # If we reach bottom, end the search
+            # if we reach bottom, end the search
             if left_child_index >= len(self.tree):
                 leaf_index = parent_index
                 break

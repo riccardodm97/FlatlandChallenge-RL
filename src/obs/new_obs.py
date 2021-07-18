@@ -46,7 +46,7 @@ class DensityForRailEnv(ObservationBuilder):
         density_map = np.zeros(shape=(self._height, self._width, self._depth), dtype=np.float32)
         if self._predictions[handle] is not None:
             for t, prediction in enumerate(self._predictions[handle]):
-                if np.isnan(prediction).any():
+                if np.isnan(prediction).any():                                       #if any prediction from the predictor contains nan don't compute the density map and leave all zeros 
                     break
                 p = tuple(np.array(prediction[1:3]).astype(int))
                 d = t if self._depth > 1 else 0

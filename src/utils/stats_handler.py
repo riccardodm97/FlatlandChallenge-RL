@@ -17,7 +17,6 @@ exploration_window : Deque = deque(maxlen=100)
 act_timer_window : Deque = deque(maxlen=100)
 learn_timer_window : Deque = deque(maxlen=100)
 
-#TODO add more 
 
 #actual log call to wandb cloud 
 def on_episode_end(ep_id):

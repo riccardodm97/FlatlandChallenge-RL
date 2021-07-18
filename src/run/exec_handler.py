@@ -126,11 +126,11 @@ class ExcHandler:
 
         agent_obs = [None] * self._env.get_num_agents()
         agent_prev_obs = [None] * self._env.get_num_agents()
-        agent_prev_action = [2] * self._env.get_num_agents()       #TODO perché??
+        agent_prev_action = [2] * self._env.get_num_agents()       
         update_values = [False] * self._env.get_num_agents()
         action_dict = dict()
 
-        eval_while_train = False                                   #TODO: DECIDERE 
+        eval_while_train = False                                   # do some eval pass or not while training  
 
         stats.utils_stats['smoothed_score'] = -1
         stats.utils_stats['smoothed_completion'] = 0.0
