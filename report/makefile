@@ -3,4 +3,4 @@ make pdf:
 	biber report
 	pdflatex report
 	pdflatex report
-	rm *.aux *.bbl *.bcf *.blg *.toc *.log *.xml *.out
+	rm *.aux *.bbl *.bcf *.blg *.toc *.lof *.log *.xml *.out

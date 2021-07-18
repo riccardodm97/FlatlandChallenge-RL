@@ -6,12 +6,14 @@
 \usepackage[style=ieee, backend=biber]{biblatex}
 %\usepackage[hidelinks]{hyperref}
 \usepackage{hyperref}
+\usepackage{float}
 \addbibresource{bib.bib}
 \usepackage{setspace}
 \usepackage{amsfonts}
 \usepackage[nottoc,numbib]{tocbibind}
 \usepackage{amsmath}
 \numberwithin{equation}{section}
+
 
 \DeclareMathOperator*{\argmax}{arg\,max}
 
@@ -34,17 +36,21 @@
 
 \clearpage
 
+\listoffigures
+
+\clearpage
+
 
 \section[Flatland Challenge]{Flatland Challenge \cite{flatland}}
 
 The aim of the challenge, is to achieve efficient management of railway traffic. In particular, this problem is tackled in a simple grid world environment, in order to simulate and experiment different scenarios.
 
-In more detail, the goal consists in making a number of trains arrive at their destinations minimizing the travel time. Even though for simple environments the train can follow explicit plans, as complexity increases the problem of mapping all possible states becomes intractable, for this reason a class of algorithms known as Reinforcement Learning (Section \ref{ch:reinforcement-learning}) can be exploited.
+In more detail, the goal consists in making a number of trains arrive at their destinations minimizing the travel time. Even though for simple environments the train can follow explicit plans, as complexity increases the problem of mapping all possible states becomes intractable, for this reason a class of algorithms known as Reinforcement Learning (Section \ref{sec:reinforcement-learning}) can be exploited.
 
 \begin{figure}[h]
 	\centering
 		\fbox{\includegraphics[width=\textwidth]{Images/Flatland_Example.png}}
-		\caption{A possible Flatland instance.}
+		\caption{A possible Flatland instance}
 \end{figure}
 
 \subsection[The environment]{The environment \cite{flatland-challenge}}
@@ -56,7 +62,7 @@ Each cell in the Flatland grid can take the form of any of 8 tile types, as show
 \begin{figure}[h]
 	\centering
 		\fbox{\includegraphics[width=\textwidth]{Images/cell-types.png}}
-		\caption{The 8 cell types.}
+		\caption{The 8 cell types}
 	\label{fig:cell-types}
 \end{figure}
 
@@ -77,12 +83,12 @@ Since Flatland is a railway simulations, the agents' actions are naturally very 
 
 \subsection[Observations]{Observations \cite{observations}}
 
-The Flatland environment comes with 3 default observation: \texttt{Global}, \texttt{Local Grid}, and \texttt{Local Tree}. A graphical representation of the 3 observations is given in Fig. \ref{fig:observations}.
+The Flatland environment comes with 3 default observation: Global, Local Grid, and Local Tree. A graphical representation of the 3 observations is given in Fig. \ref{fig:observations}.
 
 \begin{figure}[h]
 	\centering
 		\fbox{\includegraphics[width=\textwidth]{Images/observations.png}}
-		\caption{The 3 default Flatland observations.}
+		\caption{The 3 default Flatland observations}
 	\label{fig:observations}
 \end{figure}
 
@@ -110,30 +116,7 @@ The Local Grid Observation returns the rail environment in a neighborhood of the
 
 \subsubsection{Tree Observation}
 
-The Tree Observation exploits the graph structure of the railway. It generates a 4-branched tree starting from the agent's position, with each branch following an allowed transition, as shown in Fig. \ref{fig:tree}.
-
-\begin{figure}[h]
-	\centering
-		\fbox{\includegraphics[width=\textwidth]{Images/tree.png}}
-		\caption{The Flatland Tree Observation.}
-	\label{fig:tree}
-\end{figure}
-
-Each node is composed of 12 features:
-\begin{itemize}
-	\item Channel 0: if own target lies on the explored branch the current distance from the agent in number of cells is stored; 
-	\item Channel 1: if another agents target is detected the distance in number of cells from current agent position is stored;
-	\item Channel 2: if another agent is detected the distance in number of cells from current agent position is stored;
-	\item Channel 3: possible conflict detected;
-	\item Channel 4: if a not usable switch is detected the distance is stored;
-	\item Channel 5: distance to the next node;
-	\item Channel 6: minimum remaining travel distance from node to the agent’s target given the direction of the agent;
-	\item Channel 7: number of agents going in the same direction found on path to node;
-	\item Channel 8: number of agents going in the opposite direction found on path to node;
-	\item Channel 9: if an agent has a malfunctioning, the number of time steps the observed agent will remain blocked is stored;
-	\item Channel 10: slowest observed speed of an agent in same direction;
-	\item Channel 11: number of agents ready to depart but no yet active.
-\end{itemize}
+The Tree Observation exploits the graph structure of the railway. It generates a 4-branched tree starting from the agent's position, with each branch following an allowed transition. More information can be found in Section \ref{sec:tree-observation}.
 
 
 \subsection[Rewards]{Rewards \cite{actions-rewards}}
@@ -164,8 +147,8 @@ In a real railway, the difference in the various agents' speeds plays a huge rol
 
 
 
-
-\section[Reinforcement Learning]{Reinforcement Learning \cite{reinforcement-learning}}\label{ch:reinforcement-learning}
+\clearpage
+\section[Reinforcement Learning]{Reinforcement Learning \cite{reinforcement-learning}}\label{sec:reinforcement-learning}
 
 The term Reinforcement Learning refers to the class of agents which rely on feedbacks, or rewards, produced by the agents themselves when interacting with the environment. The way Reinforcement Learning works is to use observed rewards to learn the best possible policy for the given environment. In other words, the agent has no prior knowledge of the environment and must learn how to behave based only on posterior trial-and-error feedbacks.
 
@@ -227,12 +210,12 @@ Multi-Agent Reinforcement Learning (\textsc{Marl}) refers to a version of Reinfo
 \end{itemize}
 
 
-
+\clearpage
 \section{Implementation}
 
 
 
-\subsection[Deep Q-Network Agent]{Deep Q-Network Agent \cite{dqn-tutorial, improvements}}
+\subsection[Deep Q-Network Agents]{Deep Q-Network Agents \cite{dqn-tutorial, improvements, drl-8-dqn-ddqn}}\label{sec:dqns}
 
 Learning using Deep Q-Networks (DQN) is a relatively new paradigm, having been introduced in 2014. In general, the main feature of DQN algorithms is the exploitation of Deep Neural Networks to learn the Q-values of a problem. There are many versions of DQN algorithms, of which the most common are:
 \begin{itemize}
@@ -255,7 +238,7 @@ The main difference between DQN and standard Q-learning is the way the Q-table i
 
 Again, Eq. \eqref{eq:bellman} is used to update the neural networks. In particular, the change of weights is expressed by:
 \begin{equation}\label{eq:weights}
-	\Delta w = \alpha\left[\left(r+\lambda\max_a' Q\left(s',a',w\right)\right)-Q\left(s,a,w\right)\right]\nabla_wQ\left(s,a,w\right),
+	\Delta w = \alpha\left[\left(r+\lambda\max_{a'} Q\left(s',a',w\right)\right)-Q\left(s,a,w\right)\right]\nabla_wQ\left(s,a,w\right),
 \end{equation}
 where the part in the square brackets represent the temporal difference error and the last factor is the gradient of the current predicted Q-value.
 
@@ -288,7 +271,7 @@ where $\tau$ is an arbitrary (small) parameter.
 
 \subsubsection{Dueling DQN}
 
-The third DQN version is based on decomposing the Q-value in two parts:
+The third DQN version is based on decomposing the Q-value in two parts, as shown in Fig. \ref{fig:dueling}:
 \begin{equation}
 	Q\left(s,a\right)=V\left(s\right)+A\left(s,a\right)
 \end{equation}
@@ -297,6 +280,13 @@ where $V\left(s\right)$ is the value of being in state $s$ and $A\left(s,a\right
 	Q\left(s,a\right)=V\left(s\right)+A\left(s,a\right)-\frac{1}{\left|A\right|}\sum_aA\left(s,a\right),
 \end{equation}
 where the last term is a normalization factor.
+
+\begin{figure}[h]
+	\centering
+		\fbox{\includegraphics[width=\textwidth]{Images/dueling.jpg}}
+		\caption{A schematic of the Dueling DQN}
+	\label{fig:dueling}
+\end{figure}
 
 Dueling DQN focuses on separating the estimator of the two values, using one stream to estimate the state value $V\left(s\right)$ and another one to estimate the advantage of each action $A\left(s,a\right)$. Decoupling these two values becomes particularly useful for states where any action does not affect the environment in a relevant way.
 
@@ -330,8 +320,8 @@ Of course, these three methods are not the only ones to deal with DQNs. A partic
 \subsection[Action Selectors]{Action Selectors \cite{action-selectors}}\label{sec:action-selectors}
 In the learning process of a Reinforcement learning agent, exploration plays a crucial role: in order for an agent to properly learn from the interaction with the environment, it must be exposed to as many states as possible. Since an agent needs the right experiences to learn a good policy, but also needs a good policy to obtain the environment, a balance, known as exploration-exploitation tradeoff, needs to be reached. There are various action selection approaches which can be used by the agent, of which the main ones are:
 \begin{itemize}
-	\item Greedy Approach;
 	\item Random Approach;
+	\item Greedy Approach;
 	\item $\varepsilon$-Greedy Approach;
 	\item Boltzmann Approach;
 	\item Noisy Approach.
@@ -345,7 +335,7 @@ The Random Approach is the most basic method of selecting an action: the agent d
 \begin{figure}[h]
 	\centering
 		\fbox{\includegraphics[width=\textwidth]{Images/random.png}}
-		\caption{Action selection distribution for the Random Approach.}
+		\caption{Action selection distribution for the Random Approach}
 	\label{fig:random}
 \end{figure}
 
@@ -359,7 +349,7 @@ The Greedy Approach is the extreme opposite of the Random one: it consists in al
 \begin{figure}[h]
 	\centering
 		\fbox{\includegraphics[width=\textwidth]{Images/greedy.png}}
-		\caption{Action selection distribution for the Greedy Approach.}
+		\caption{Action selection distribution for the Greedy Approach}
 	\label{fig:greedy}
 \end{figure}
 
@@ -376,7 +366,7 @@ The $\varepsilon$-Greedy Approach can be viewed as a combination of the Greedy a
 \begin{figure}[h]
 	\centering
 		\fbox{\includegraphics[width=\textwidth]{Images/epsilon.png}}
-		\caption{Action selection distribution for the $\varepsilon$-Greedy Approach.}
+		\caption{Action selection distribution for the $\varepsilon$-Greedy Approach}
 	\label{fig:epsilon}
 \end{figure}
 
@@ -391,7 +381,7 @@ The Boltzmann Approach takes the exploration-exploitation balance of $\varepsilo
 \begin{figure}[h]
 	\centering
 		\fbox{\includegraphics[width=\textwidth]{Images/boltzmann.png}}
-		\caption{Action selection distribution for the Boltzmann Approach.}
+		\caption{Action selection distribution for the Boltzmann Approach}
 	\label{fig:boltzmann}
 \end{figure}
 
@@ -419,27 +409,7 @@ There are two main ways of introducing noise to the Network: Independent Gaussia
 
 
 
-
-\subsection[Proximal Policy Optimization]{Proximal Policy Optimization \cite{ppo-algorithm, understanding-ppo}}
-Proximal Policy Optimization (PPO) is a technique designed to alternate between sampling data through interaction with the environment and optimizing an objective function using stochastic gradient ascent. The main feature of PPO is the use of the clipped surrogate objective:
-\begin{equation}
-	L^\mathrm{CLIP}\left(\theta\right)=\hat{\mathbb{E}}_t\left[\min\left(r_t\left(\theta\right)\hat{A}_t,\mathrm{clip}\left(r_t\left(\theta\right),1-\varepsilon,1+\varepsilon\right)\hat{A}_t\right)\right].
-\end{equation}
-
-Expectations are computed over a minimum of two terms: a normal objective and a clipped objective. Because of the $\min$ operator, the clipped objective behaves differently when the advantage estimate is positive or negative.
-
-\begin{figure}[h]
-	\centering
-		\fbox{\includegraphics[width=\textwidth]{Images/clipped.png}}
-		\caption{The $L^\mathrm{CLIP}$ function for positive advantages $A>0$ and negative advantages $A<0$. The red circles show the starting points for the optimization.}
-	\label{fig:clipped}
-\end{figure}
-
-The effect of clipping is shown in Fig. \ref{fig:clipped}. On the left situation, when the selected action has a better-than-expected effect, the loss function flattens out when the action is much more likely under the current policy compared to the old one. This is done to prevent overdoing an action update by taking a step too far. The same happens to the graph on the right: the loss function flattens out when the action is much less likely under the current policy.
-
-
-
-\subsection[Experience Replay]{Experience Replay \cite{experience-replay}}
+\subsection[Experience Replay]{Experience Replay \cite{experience-replay}}\label{sec:experience-replay}
 
 In basic Q-learning algorithms, experiences are utilized just once and then thrown away. This is a waste, as some experiences may be rare and some may be costly. Therefore, experiences should be reused effectively. An experience is defined as a quadruple $\left(s,a,s',r\right)$, meaning that the execution of action $a$ in a state $s$ results in the state $s'$ with reward $r$.
 
@@ -463,16 +433,196 @@ which fully compensates for the non uniform probabilities if $\beta=1$. For stab
 
 
 \subsection{Observation}
+Two observations are used in this project. The first one is the Tree Observation, one of the 3 default ones; the other one is a custom observation, the Density Observation.
 
-\subsubsection{Predictor}
+
+\subsubsection[Tree Observation]{Tree Observation \cite{observations}}\label{sec:tree-observation}
+
+As already anticipated, the Tree Observation consists in a 4-branched tree starting from the agent's position and exploring the graph structure of the railway, as shown in Fig. \ref{fig:tree}. Each node is composed of 12 features:
+\begin{itemize}
+	\item Channel 0: if own target lies on the explored branch the current distance from the agent in number of cells is stored; 
+	\item Channel 1: if another agents target is detected the distance in number of cells from current agent position is stored;
+	\item Channel 2: if another agent is detected the distance in number of cells from current agent position is stored;
+	\item Channel 3: possible conflict detected;
+	\item Channel 4: if a not usable switch is detected the distance is stored;
+	\item Channel 5: distance to the next node;
+	\item Channel 6: minimum remaining travel distance from node to the agent’s target given the direction of the agent;
+	\item Channel 7: number of agents going in the same direction found on path to node;
+	\item Channel 8: number of agents going in the opposite direction found on path to node;
+	\item Channel 9: if an agent has a malfunctioning, the number of time steps the observed agent will remain blocked is stored;
+	\item Channel 10: slowest observed speed of an agent in same direction;
+	\item Channel 11: number of agents ready to depart but no yet active.
+\end{itemize}
+
+\begin{figure}[h]
+	\centering
+		\fbox{\includegraphics[width=\textwidth]{Images/tree.png}}
+		\caption{The Flatland Tree Observation}
+	\label{fig:tree}
+\end{figure}
 
 
+
+\subsubsection{Density Observation}
+
+The custom Density Observation exploits Flatland's Shortest Path Predictor to assign each cell a value encoding information about if and when it will be occupied by a train. The values of all agents for a single cell are combined into a density value, depending on the time differences between the moments when the various agents occupy a given cell.
+
+More specifically, each agent uses two matrices to learn: one matrix encodes the density map for the agent itself, while the other one is assigned density values depending on the other agent's predicted paths. Then the two matrices are stacked into a $w\times h\times 2$ matrix, where $w$ and $h$ are respectively the width and the height of the environment, which is then fed to a Convolutional Neural Network (CNN).%, as shown in Fig. \ref{fig:cnn}.%
+The two matrices are stacked and not simply concatenated in order to preserve the spatial correspondency between the two matrices' density values. After 3 filtering layers of increasing size, the CNN output is flattened and passed to a standard Dueling DQN.
+
+%\begin{figure}[h]
+%	\centering
+%		\fbox{\includegraphics[width=\textwidth]{Images/cnn.png}}
+%		\caption{CNN Dueling DQN used for the Density Observation}
+%	\label{fig:cnn}
+%\end{figure}
+
+\subsection[Proximal Policy Optimization]{Proximal Policy Optimization \cite{ppo-algorithm, understanding-ppo}}
+
+Proximal Policy Optimization (PPO) is a policy gradient-based method of reinforcement learning, designed to make some improvements on the Trust Region Policy Optimization (TRPO) algorithm, which in turn was designed to improve the Advantage Actor Critic (A2C) method. From the TRPO, the PPO inherits the importance sampling version of the policy loss function, which enables better sample efficiency, and which is expressed as follows:
+\begin{equation}
+	L^\mathrm{CPI}\left(\theta\right)=\mathbb{E}_t\left[\frac{\pi_\theta\left(a_t|s_t\right)}{{\pi_\theta}_\mathrm{old}}A_t\right]=\mathbb{E}_t\left[r_t\left(\theta\right)A_t\right],
+\end{equation}
+where the superscript $\mathrm{CPI}$ stands for ``Conservative Policy Iteration''. This loss function is an improvement of the one expressed by the A2C method. The policy loss indeed is no more subjected to the so-called ``destructively large policy updates'', typical of gradient-based methods, which maybe leads to update the parameters so far outside of the range, but now the policy gradient steps are limited, defining a ratio $r\left(\theta\right)$ between the action under the current policy and the action under the previous policy. PPO goes even further, introducing its main feature called ``clipped surrogate objective'', which can be expressed as follows:
+\begin{equation}
+	L^\mathrm{CLIP}\left(\theta\right)=\mathbb{E}_t\left[\min\left(r_t\left(\theta\right)A_t,\mathrm{clip}\left(r_t\left(\theta\right),1-\varepsilon,1+\varepsilon\right)A_t\right)\right].
+\end{equation}
+
+The loss function is given by the expectation computed over a minimum of two terms: a normal objective and a clipped objective. The key component comes from the second term where a normal objective is truncated with a clipping operation between $1-\varepsilon$ and $1+\varepsilon$, where $\varepsilon$ is a hyperparameter. Because of the $\min$ operator, the clipped objective behaves differently when the advantage estimate is positive or negative.
+
+\begin{figure}[h]
+	\centering
+		\fbox{\includegraphics[width=\textwidth]{Images/clipped.png}}
+		\caption[The $L^\mathrm{CLIP}$ function for positive and negative advantages]{The $L^\mathrm{CLIP}$ function for positive advantages $A>0$ and negative advantages $A<0$; the red circles show the starting points for the optimization}
+	\label{fig:clipped}
+\end{figure}
+
+The effect of clipping is shown in Fig. \ref{fig:clipped}. On the left situation, when the selected action has a better-than-expected effect, the loss function flattens out when the action is much more likely under the current policy compare to the old one. This is done to prevent overdoing an action update by taking a step too far. The same happens to the graph on the right: the loss function flattens out when the action is much less likely under the current policy. This constraint is very powerful and avoid the computation of the additional KL constraint used in the TRPO in order to define a trust region, known to add overhead to optimization processes which sometimes leads to an undesirable training behavior. The total loss function for PPO then can be expressed as follows:
+\begin{equation}
+	L_t^{\mathrm{CLIP}+\mathrm{VF}+\mathrm{S}}\left(\theta\right)=\mathbb{E}_t\left[L_t^\mathrm{CLIP}\left(\theta\right)-c_1L_t^\mathrm{VF}\left(\theta\right)+c_2S\left[\pi_\theta\right]\left(s_t\right)\right],
+\end{equation}
+where $c_1$ and $c_2$ are hyperparameters that weigh the various components of the loss, $S$ denotes an entropy bonus (added to push the policy to behave more spontaneously until the other part of the objective starts dominating and so encouraging greater exploration), and $L_t^\mathrm{VF}$ is a squared-error loss (with the latter two terms identical to the components in A2C and with signs introduced to convert a maximization function to a minimization function).
+
+
+
+
+\clearpage
 \section{Results}
 
-Experiment tracking was performed using the Weights and Biases tool \cite{wandb}.
+All training runs are performed with the following environment:
+\begin{itemize}
+	\item 3 agents;
+	\item Width $w = 30$;
+	\item Height $h = 30$;
+	\item 2 cities;
+	\item Maximum 2 rails between cities;
+	\item Maximum 2 rails inside each city.
+\end{itemize}
+
+Experiment tracking is performed using the Weights and Biases tool \cite{wandb}.
+
+All graphs show the number of steps on the $x$ axis and the average completion on the last 100 runs. The plots are smoothed with Weights and Biases's Gaussian filter with a power of $50$.
 
 
-\section{Conclusion}
+
+
+\clearpage
+
+\subsection{Deep Q-Network agents}
+
+The plot shown in Fig. \ref{fig:plot-dqn} represents 3 runs with different DQN agents and the following fixed settings:
+\begin{itemize}
+	\item $\varepsilon$-Greedy action selector;
+	\item Standard Experience Replay;
+	\item Tree Observation.
+\end{itemize}
+
+
+\begin{figure}[H]
+	\centering
+		\fbox{\includegraphics[width=\textwidth]{Images/plot-dqn.png}}
+		\caption{Deep Q-Network agents}
+	\label{fig:plot-dqn}
+\end{figure}
+
+The Standard DQN performs much worse compared to the Double and Dueling DQN agents. This is in line with what is expected according to the theory exposed in Section \ref{sec:dqns}.
+
+
+\clearpage
+
+\subsection{Action selectors}
+
+The plot shown in Fig. \ref{fig:plot-action-selectors} represents 3 runs with different action selectors and the following fixed settings:
+\begin{itemize}
+	\item Standard DQN agent;
+	\item Standard Experience Replay;
+	\item Tree Observation.
+\end{itemize}
+
+
+\begin{figure}[H]
+	\centering
+		\fbox{\includegraphics[width=\textwidth]{Images/plot-action-selectors.png}}
+		\caption{Action selectors}
+	\label{fig:plot-action-selectors}
+\end{figure}
+
+The Noisy action selector is clearly the best of the 3, with $\varepsilon$-Greedy and Boltzmann being quite close to each other. Again, these results are consistent with the expectations, given the content of Section \ref{sec:action-selectors}.
+
+\clearpage
+\subsection{Experience Replay}
+
+The plot shown in Fig. \ref{fig:plot-experience-replay} represents 2 runs with different Experience Replay paradigms and the following fixed settings:
+\begin{itemize}
+	\item Standard DQN agent;
+	\item $\varepsilon$-Greedy action selector;
+	\item Tree Observation.
+\end{itemize}
+
+\begin{figure}[H]
+	\centering
+		\fbox{\includegraphics[width=\textwidth]{Images/plot-experience-replay.png}}
+		\caption{Experience Replay}
+	\label{fig:plot-experience-replay}
+\end{figure}
+
+The Prioritized Experience Replay run performs slightly better than the Standard one, in line with the theory of Section \ref{sec:experience-replay}.
+
+\clearpage
+\subsection{Observations}
+
+The plot shown in Fig. \ref{fig:plot-observations} represents 2 runs with different observations and the following fixed settings:
+\begin{itemize}
+	\item Dueling DQN agent;
+	\item $\varepsilon$-Greedy action selector;
+	\item Standard Experience Replay.
+\end{itemize}
+
+\begin{figure}[H]
+	\centering
+		\fbox{\includegraphics[width=\textwidth]{Images/plot-observations.png}}
+		\caption{Observations}
+	\label{fig:plot-observations}
+\end{figure}
+
+Even though it is a custom observation, Density Observation did not perform as bad as expected, despite being clearly worse than the Tree Observation run, which is also the reason why Tree Observation was preferred for all the other runs.
+
+\clearpage
+\subsection{Proximal Policy Optimization}
+
+The plot shown in Fig. \ref{fig:plot-ppo} represents 3 runs with different PPO parameters. The legend labels correspond to a triple of $\varepsilon/c_1/c_2$.
+
+
+\begin{figure}[H]
+	\centering
+		\fbox{\includegraphics[width=\textwidth]{Images/plot-ppo.png}}
+		\caption{Proximal Policy Optimization}
+	\label{fig:plot-ppo}
+\end{figure}
+
+Using a bigger $\varepsilon$ value ($0.1$), when the agent starts to go down a bad path it is unable to recover, resulting in a swift decrease of completion percentage. This behavior is particularly evident when using a small entropy weight ($c_2$). On the contrary, using a small $\varepsilon$ value ($0.01$) and a big entropy weight ($0.02$) helps recovering after a bad path is taken, giving the best results. In any case, the performance of PPO methods is clearly worse than the runs shown in previous plots.
+
+
 
 
 
