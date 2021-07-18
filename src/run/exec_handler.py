@@ -33,7 +33,7 @@ class ExcHandler:
 
         # The action space of flatland is 5 discrete actions
         self._action_size = 5
-        self._obs_size = self._obs_wrapper.get_obs_dim()
+        self._obs_shape = self._obs_wrapper.get_obs_shape()
 
         # Instantiate agent 
         self._agent = self.handleAgent(self._agn_par)
@@ -41,7 +41,7 @@ class ExcHandler:
         #LOG
         wandb.config.max_steps = self._max_steps
         wandb.config.action_size = self._action_size
-        wandb.config.obs_size = self._obs_size
+        wandb.config.obs_shape = str(self._obs_shape)
 
 
 
@@ -50,9 +50,16 @@ class ExcHandler:
         env_par : dict = environment_param['env']
         obs_par : dict = environment_param['obs']
 
-        # Instantiate observation 
+        #if densityObs, the observation shape should be the same as the env grid shape 
+        if obs_par['class'] == 'DensityObs':
+            assert env_par['x_dim'] == obs_par['width']
+            assert env_par['y_dim'] == obs_par['height']
+
+        #instantiate observation 
         obs_wrap_class = getattr(obs_wrap_classes, obs_par['class'])
         obs_wrapper : Observation  = obs_wrap_class(obs_par) 
+
+        #the prediction_builder is added to the Observation
 
         #init malfunction parameters
         malfunction = None
@@ -67,8 +74,6 @@ class ExcHandler:
                         1./2.: 0.25,  # Fast freight train
                         1./3.: 0.25,  # Slow commuter train
                         1./4.: 0.25}  # Slow freight train
-
-        #the prediction_builder is added to the Observation
         
         #setup the environment
         env = RailEnv(
@@ -94,8 +99,12 @@ class ExcHandler:
         return obs_wrapper, env, max_steps
     
     def handleAgent(self, agn_par : dict) -> Agent:
+
+        if self._env_par['obs']['class'] == 'DensityObs' :                       #if observation is DensityObs the model SHOULD be DuelingCNN
+            assert agn_par['model_class'] == 'DuelingCNN'
+
         agent_class = getattr(agent_classes, agn_par['class'])
-        agent : Agent = agent_class(self._obs_size, self._action_size, agn_par, self._checkpoint, True if self._mode == 'eval' else False)
+        agent : Agent = agent_class(self._obs_shape, self._action_size, agn_par, self._checkpoint, True if self._mode == 'eval' else False)
 
         return agent
     
@@ -212,7 +221,7 @@ class ExcHandler:
             self._agent.on_episode_end(self._env.get_agent_handles())
 
             # Evaluate policy and log results at some interval
-            if eval_while_train and ep_id  % 100 == 0 and ep_id!=0 or ep_id == n_episodes-1 :
+            if eval_while_train and ((ep_id  % 100 == 0 and ep_id!=0) or ep_id == n_episodes-1) :
                 scores, completions, nb_steps_eval = self.eval_agent(10,False)
 
                 stats.log_stats["evaluation/scores_min"] = np.min(scores)
