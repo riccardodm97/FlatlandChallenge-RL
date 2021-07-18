@@ -1,0 +1,11 @@
+{
+
+    "class": "PPOAgent",
+    "surrogate_eps_clip" : 0.01, 
+    "loss_weight" : 0.5, 
+    "entropy_weight" : 0.02, 
+    "entropy_decay":  0.998,
+    "learning_rate": 0.5e-4
+
+
+}

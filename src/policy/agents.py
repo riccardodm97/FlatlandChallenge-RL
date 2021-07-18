@@ -235,7 +235,6 @@ class PPOAgent(Agent):
         self._last_value = None
 
     def learn(self, agents):
-        self.entropy_weight = self.entropy_decay * self.entropy_weight
         
         for agent in agents:
             actions, values, states, rewards, dones, probs = self.memory.get_agent_experience(agent) #TODO : DEBUG MODE SQUEEZE 
@@ -264,7 +263,7 @@ class PPOAgent(Agent):
             grads = tape.gradient(tot_loss, self.pponetwork.trainable_variables)
             self._optimizer.apply_gradients(zip(grads, self.pponetwork.trainable_variables))
            
-
+        self.entropy_weight = self.entropy_decay * self.entropy_weight
         self.memory.reset_mem() 
 
     def get_advantages(self, rewards, dones, values, next_value):
