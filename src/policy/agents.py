@@ -113,7 +113,7 @@ class DQNAgent(Agent):
             self.qnetwork_target.set_weights(self.qnetwork.get_weights())  
          
 
-    # TODO : RIMETTERE QUESTO MA EVITARE CHE DEBBA FARE PREDICT OGNI VOLTA 
+    # TODO : UNCOMMENT THIS AND COMMENT THE ACT METHOD BELOW TO USE ACTION SELECTORS (SINCE IT ALWAYS MAKE THE MODEL PREDICT IT IS CONSIDERABLY SLOWER) 
     # def act(self, obs, eval_mode) -> int : 
     #     state = tf.expand_dims(obs, axis=0)
     #     values = self.qnetwork.predict(state)
