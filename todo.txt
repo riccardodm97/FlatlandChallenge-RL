@@ -1,6 +1,0 @@
-1 modificare timer per gestire media , std , roba su lap time 
-2 aggiungere malfunzionamenti e velocità agenti
-3 aggiungere stats a eval 
-4 creare file json per env con vari tipi da facile a complesso     
-5 provare differenti tipi di DQN / di buffer / di agenti / di policy
-6 creare observation 
