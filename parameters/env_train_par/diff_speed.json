@@ -1,0 +1,25 @@
+{
+    "env": {
+        "n_agents": 3,
+        "x_dim": 30,
+        "y_dim": 30,
+        "n_cities": 2,
+        "max_rails_between_cities": 2,
+        "max_rails_in_city": 2,
+        "grid" : true,
+        "seed": 42,
+        "malfunction":{
+            "enabled" : false,
+            "rate": 0.01,
+            "min_step" : 5,
+            "max_step" : 30
+        },
+        "diff_speed_enabled" : true
+    },
+    "obs": {
+        "class": "TreeObs",
+        "tree_depth": 2,
+        "radius": 10,
+        "predictor": true
+    }
+}

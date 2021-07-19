@@ -1,0 +1,26 @@
+{
+
+    "class": "DQNAgent",
+    "double": true,
+    "model_class": "NaiveQNetwork",
+    "action_selection":{
+        "noisy": false,
+        "class": "EpsilonGreedyAS",
+        "p_start": 1.0,
+        "p_end": 0.01,
+        "p_decay": 0.997
+        },
+    "memory":{
+        "class": "ReplayBuffer_np",
+        "mem_size": 100000,
+        "is_per": false
+        },
+    "sample_size": 128,
+    "learn_every": 10,
+    "learning_rate": 0.5e-4,
+    "gamma": 0.99,
+    "tau": 1e-3
+
+}
+
+
