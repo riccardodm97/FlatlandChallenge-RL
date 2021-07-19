@@ -262,9 +262,9 @@ Then, every $\mathrm{T}$ steps the weights $w^-$ of the target network are updat
 	w^-\leftarrow w.
 \end{equation}
 
-An alternative to this updating method of is given by the so-called soft update \cite{soft-update}. The term soft update refers to an approach which does not update the weights once every $T$ steps, but rather frequently and very little every time. In particular, new weights are given by:
+An alternative to this weight updating method is given by the so-called soft update \cite{soft-update}. The term soft update refers to an approach which does not update the weights once every $\mathrm{T}$ steps, but rather frequently and very little every time. In particular, new weights are given by:
 \begin{equation}
-	w^-=w\tau+w^-\left(1-\tau\right),
+	w^-\leftarrow w\tau+w^-\left(1-\tau\right),
 \end{equation}
 where $\tau$ is an arbitrary (small) parameter.
 
@@ -429,7 +429,7 @@ The introduction of a bias can be corrected by using importance-sampling weight,
 \begin{equation}
 	w_i=\left(\frac{1}{N}\cdot\frac{1}{P\left(i\right)}\right)^\beta,
 \end{equation}
-which fully compensates for the non uniform probabilities if $\beta=1$. For stability reasons, weights are normalized by $\frac{1}{\max_iw_i}$, si that they only scale the update downwards.
+which fully compensates for the non uniform probabilities if $\beta=1$. For stability reasons, weights are normalized by $\frac{1}{\max_iw_i}$, is that they only scale the update downwards.
 
 
 \subsection{Observation}
